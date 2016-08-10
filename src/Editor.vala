@@ -22,7 +22,7 @@ class Editor : Gtk.Box
         ICON_DETAILS = new Gtk.Image.from_icon_name( "open-menu-symbolic"    , TOOLBAR_ICON_SIZE );
     }
 
-    private Gtk.ListStore    files      = new Gtk.ListStore( 2, typeof( string ), typeof( string ) );
+    private Gtk.ListStore    files      = new Gtk.ListStore( 3, typeof( string ), typeof( string ), typeof( string ) );
     private Session          session    = new Session();
     private Gtk.Stack        stack      = new Gtk.Stack(); 
     private Gtk.Toolbar      toolbar    = new Gtk.Toolbar();
@@ -186,13 +186,17 @@ class Editor : Gtk.Box
         var files_view_toolitem = new Gtk.ToolItem();
         files_view_toolitem.add( files_view );
         files_view_toolitem.set_expand( true );
-        var text_renderer = new Gtk.CellRendererText();
-        var   pb_renderer = new Gtk.CellRendererPixbuf();
-        files_view.pack_start(   pb_renderer, false );
-        files_view.pack_start( text_renderer, false );
-        files_view.add_attribute(   pb_renderer, "icon_name", 0 );
-        files_view.add_attribute( text_renderer,      "text", 1 );
-        pb_renderer.set_fixed_size( 20, 16);
+        var  text_renderer = new Gtk.CellRendererText();
+        var    pb_renderer = new Gtk.CellRendererPixbuf();
+        var badge_renderer = new Granite.Widgets.CellRendererBadge();
+        files_view.pack_start(    pb_renderer, false );
+        files_view.pack_start(  text_renderer, true  );
+        files_view.pack_start( badge_renderer, false );
+        files_view.add_attribute(    pb_renderer, "icon_name", 0 );
+        files_view.add_attribute(  text_renderer,      "text", 1 );
+        files_view.add_attribute( badge_renderer,      "text", 2 );
+        pb_renderer.set_fixed_size( 20, 16 );
+        badge_renderer.set_padding( 10,  0 );
         files_view.show_all();
 
         files_view.changed.connect( () =>
@@ -205,20 +209,25 @@ class Editor : Gtk.Box
             }
         );
 
+        var btn_close_toolitem = new Gtk.ToolItem();
+        var btn_close = new Gtk.Button();
+        btn_close.name = "btn-close-current-file";
+        btn_close.image = ICON_CLOSE;
+        btn_close.can_focus = false;
+        btn_close.show();
+        btn_close.clicked.connect( close_current_file );
+        btn_close_toolitem.add( btn_close );
+
         toolbar.add( new Gtk.SeparatorToolItem() );
         toolbar.add( files_view_toolitem );
-
-        var btn_close = new Gtk.ToolButton( ICON_CLOSE, null );
-        toolbar.add( btn_close );
-        btn_close.clicked.connect( close_current_file );
-        btn_close.show();
+        toolbar.add( btn_close_toolitem );
+        toolbar.add( new Gtk.SeparatorToolItem() );
 
         var btn_master_toolitem = new Gtk.ToolItem();
         btn_master_toolitem.add( btn_master );
-        toolbar.add( new Gtk.SeparatorToolItem() );
-        toolbar.add( btn_master_toolitem );
-
+        btn_master.can_focus = false;
         btn_master.toggled.connect( set_current_file_master );
+        toolbar.add( btn_master_toolitem );
 
         var mnu_save_as = new Gtk.MenuItem.with_label( "Save as..." );
         mnu_save_as.activate.connect( save_current_file_as );
@@ -285,7 +294,25 @@ class Editor : Gtk.Box
     {
         if( btn_master.get_active() )
         {
-            session.master = current_file;
+            if( session.master != current_file )
+            {
+                if( session.master != null )
+                {
+                    var position = session.master.position;
+                    session.master = null;
+                    update_files_model( position, 1 );
+                }
+                session.master = current_file;
+                update_files_model( current_file.position, 1 );
+            }
+        }
+        else
+        {
+            if( session.master == current_file )
+            {
+                session.master = null;
+                update_files_model( current_file.position, 1 );
+            }
         }
     }
 
@@ -435,8 +462,9 @@ class Editor : Gtk.Box
 
             /* Update the current row's data.
              */
-            files.set( itr, 1, file.label );
             files.set( itr, 0, icon_name  );
+            files.set( itr, 1, file.label );
+            files.set( itr, 2, session.master == file ? "master" : "" );
 
             /* Make the iterator step forward.
              */
