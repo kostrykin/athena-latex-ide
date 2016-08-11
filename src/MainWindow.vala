@@ -4,8 +4,11 @@ using Granite.Widgets;
 public class MainWindow : Gtk.Window
 {
 
-    private Gtk.Stack stack = new Gtk.Stack();
-    private Editor editor   = new Editor();
+    private Gtk.Overlay overlay = new Gtk.Overlay();
+    private Gtk.Stack   stack   = new Gtk.Stack();
+    private Editor      editor  = new Editor();
+
+    private Granite.Widgets.OverlayBar build_info;
 
     private Gtk.Button btn_quick_build = new Gtk.Button.with_label( "Quick Build" );
     private Gtk.Button btn_full_build  = new Gtk.Button.with_label( "Full" );
@@ -32,9 +35,13 @@ public class MainWindow : Gtk.Window
         this.setup_welcome_screen( app );
         this.setup_editor();
 
+        this.build_info = new Granite.Widgets.OverlayBar( overlay );
+        this.build_info.set_no_show_all( true );
+
         var hbox = new Gtk.Box( Gtk.Orientation.HORIZONTAL, 0 );
         hbox.pack_start( stack );
-        this.add( hbox );
+        this.overlay.add( hbox );
+        this.add( overlay );
 
         set_buildable( 0, false );
     }
@@ -195,12 +202,31 @@ public class MainWindow : Gtk.Window
             var commands  = builder[ (string) build_type_name ];
             var context   = builder.create_build_context( editor.build_input );
             current_build = commands.prepare_run( context, mode );
-            current_build.step.connect( ( build ) => { stdout.printf( "%d of %d done\n", build.position, build.commands.length ); } );
-            current_build.done.connect( ( build, result ) => { stdout.printf( "result: %d\n", result ); } );
+            current_build.step.connect( update_build_info );
+            current_build.done.connect( ( build, result ) => { exit_build( mode, result == 0 ); } );
             current_build.start();
 
-            set_buildable( BUILD_LOCKED_BY_ONGOING_BUILD, true ); // TODO: unset when finished
+            set_buildable( BUILD_LOCKED_BY_ONGOING_BUILD, true );
         }
+    }
+
+    private void update_build_info( CommandSequence.Run build )
+    {
+        if( build.position < build.commands.length )
+        {
+            var cmd = build.commands[ build.position ];
+            build_info.status = "Build: %s (step %d of %d)".printf( cmd, build.position + 1, build.commands.length );
+            build_info.show();
+            message( @"build> $cmd" );
+        }
+    }
+
+    private void exit_build( string mode, bool success )
+    {
+        // ...
+        set_buildable( BUILD_LOCKED_BY_ONGOING_BUILD, false );
+        current_build = null;
+        build_info.hide();
     }
 
 }
