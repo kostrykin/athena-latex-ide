@@ -1,4 +1,4 @@
-class FileManager
+public class FileManager
 {
 
     private static uint NEXT_NEW_FILE_INDEX = 1;

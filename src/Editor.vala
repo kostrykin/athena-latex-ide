@@ -40,6 +40,7 @@ class Editor : Gtk.Box
     public signal void file_opened( FileManager.File file );
     public signal void file_closed( FileManager.File file );
     public signal void current_file_changed();
+    public signal void buildable_invalidated();
 
     private bool handle_files_view_changes = true;
 
@@ -183,6 +184,7 @@ class Editor : Gtk.Box
         btn_save.show();
 
         files_view = new Gtk.ComboBox.with_model( files );
+        files_view.name = "files-view";
         var files_view_toolitem = new Gtk.ToolItem();
         files_view_toolitem.add( files_view );
         files_view_toolitem.set_expand( true );
@@ -226,6 +228,7 @@ class Editor : Gtk.Box
         var btn_master_toolitem = new Gtk.ToolItem();
         btn_master_toolitem.add( btn_master );
         btn_master.can_focus = false;
+        btn_master.tooltip_text = "Always build this file";
         btn_master.toggled.connect( set_current_file_master );
         toolbar.add( btn_master_toolitem );
 
@@ -314,6 +317,7 @@ class Editor : Gtk.Box
                 update_files_model( current_file.position, 1 );
             }
         }
+        buildable_invalidated();
     }
 
     private void add_source_view( FileManager.File file )
@@ -517,7 +521,22 @@ class Editor : Gtk.Box
                 current_file = null;
             }
             current_file_changed();
+            buildable_invalidated();
         }
+    }
+
+    public FileManager.File? build_input
+    {
+        get
+        {
+            var candidate = session.master != null ? session.master : current_file;
+            return candidate != null && candidate.path != null ? candidate : null;
+        }
+    }
+
+    public bool is_buildable()
+    {
+        return build_input != null;
     }
 
 }

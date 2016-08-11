@@ -2,13 +2,15 @@ Editor > GtkToolbar {
   padding: 2px;
 }
 
-GtkComboBox > .button {
+#files-view > .button,
+#btn-full-build {
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
   border-right: 0;
 }
 
-#btn-close-current-file {
+#btn-close-current-file,
+#btn-quick-build {
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
 }
