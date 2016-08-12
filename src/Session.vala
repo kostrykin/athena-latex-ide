@@ -15,6 +15,8 @@ class Session
 
     public FileManager.File? master { public get; public set; }
 
+    public string output_path;
+
     public Session()
     {
         files.new_file_flags = FLAGS_MODIFIED;

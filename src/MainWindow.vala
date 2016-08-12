@@ -5,8 +5,10 @@ public class MainWindow : Gtk.Window
 {
 
     private Gtk.Overlay overlay = new Gtk.Overlay();
+    private Gtk.Paned   pane    = new Gtk.Paned ( Gtk.Orientation.HORIZONTAL );
     private Gtk.Stack   stack   = new Gtk.Stack();
     private Editor      editor  = new Editor();
+    private PdfPreview  preview = new PopplerPreview();
 
     private Granite.Widgets.OverlayBar build_info;
 
@@ -23,10 +25,13 @@ public class MainWindow : Gtk.Window
     private static const uint8 BUILD_LOCKED_BY_EDITOR         = 1 << 0;
     private static const uint8 BUILD_LOCKED_BY_ONGOING_BUILD  = 1 << 1;
 
+    private static const int DEFAULT_WIDTH  = 1300;
+    private static const int DEFAULT_HEIGHT =  600;
+
     public MainWindow( Athena app )
     {
         this.title = app.program_name;
-        this.set_default_size( 1300, 600 );
+        this.set_default_size( DEFAULT_WIDTH, DEFAULT_HEIGHT );
         this.window_position = Gtk.WindowPosition.CENTER;
         this.set_hide_titlebar_when_maximized( false );
 
@@ -38,10 +43,10 @@ public class MainWindow : Gtk.Window
         this.build_info = new Granite.Widgets.OverlayBar( overlay );
         this.build_info.set_no_show_all( true );
 
-        var hbox = new Gtk.Box( Gtk.Orientation.HORIZONTAL, 0 );
-        hbox.pack_start( stack );
-        this.overlay.add( hbox );
-        this.add( overlay );
+        pane.pack1( overlay,  true,  true );
+        pane.pack2( preview, false, false );
+        this.overlay.add( editor );
+        this.add( stack );
 
         set_buildable( 0, false );
     }
@@ -133,7 +138,7 @@ public class MainWindow : Gtk.Window
 
     private void setup_editor()
     {
-        stack.add_named( editor, "editor" );
+        stack.add_named( pane, "editor" );
         editor.file_closed.connect( () =>
             {
                 if( editor.files_count == 0 )
@@ -168,10 +173,25 @@ public class MainWindow : Gtk.Window
     {
     }
 
+    private void initialize_editor_pane()
+    {
+        if( pane.position == 0 )
+        {
+            int pane_position;
+            Gtk.Allocation alloc;
+            build_types_view.get_allocation( out alloc );
+            build_types_view.translate_coordinates( this, -alloc.width / 2 - 3, 0, out pane_position, null );
+            pane.position = pane_position;
+        }
+    }
+
     private void open_new_file()
     {
+        initialize_editor_pane();
         editor.open_new_file();
         stack.set_visible_child_name( "editor" );
+
+        preview.pdf_path = "/tmp/.build/test.pdf"; // FIXME: debug
     }
 
     private void open_previous()
@@ -180,6 +200,7 @@ public class MainWindow : Gtk.Window
             {
                 if( path != null )
                 {
+                    initialize_editor_pane();
                     editor.open_file_from( path );
                     stack.set_visible_child_name( "editor" );
                 }
@@ -201,13 +222,39 @@ public class MainWindow : Gtk.Window
 
             var commands  = builder[ (string) build_type_name ];
             var context   = builder.create_build_context( editor.build_input );
+
+            editor.session.output_path = "%s.pdf".printf( context.variables[ BuildManager.VAR_OUTPUT ] );
+
             current_build = commands.prepare_run( context, mode );
             current_build.step.connect( update_build_info );
             current_build.done.connect( ( build, result ) => { exit_build( mode, result == 0 ); } );
+            current_build.special_command.connect( handle_special_command );
             current_build.start();
 
             set_buildable( BUILD_LOCKED_BY_ONGOING_BUILD, true );
         }
+    }
+
+    private void handle_special_command( CommandSequence.Run build, string command )
+    {
+        switch( command )
+        {
+
+            case BuildManager.COMMAND_PREVIEW:
+                update_preview();
+                break;
+
+            default:
+                // TODO: throw error
+                break;
+        }
+    }
+
+    private void update_preview()
+    {
+        /* Reloads the preview implicitly.
+         */
+        preview.pdf_path = editor.session.output_path;
     }
 
     private void update_build_info( CommandSequence.Run build )
@@ -224,9 +271,17 @@ public class MainWindow : Gtk.Window
     private void exit_build( string mode, bool success )
     {
         // ...
-        set_buildable( BUILD_LOCKED_BY_ONGOING_BUILD, false );
-        current_build = null;
-        build_info.hide();
+        var timeout = new TimeoutSource( 1000 );
+        timeout.set_callback( () =>
+            {
+                set_buildable( BUILD_LOCKED_BY_ONGOING_BUILD, false );
+                current_build = null;
+                build_info.hide();
+                return false;
+            }
+        );
+        timeout.attach( null );
+
     }
 
 }

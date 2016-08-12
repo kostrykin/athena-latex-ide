@@ -2,7 +2,13 @@ public class BuildManager
 {
 
     public static const string COMMAND_PREVIEW = "preview";
-    public static const string MODE_FULL = "full";
+
+    public static const string MODE_FULL  = "full";
+    public static const string MODE_QUICK = "quick";
+
+    public static const string VAR_INPUT     = "INPUT";
+    public static const string VAR_OUTPUT    = "OUTPUT";
+    public static const string VAR_BUILD_DIR = "BUILD_DIR";
 
     private Gee.Map< string, CommandSequence > build_types = new Gee.TreeMap< string, CommandSequence >();
 
@@ -13,14 +19,23 @@ public class BuildManager
         for( int idx = 0; idx < latex_cmds.length; ++idx )
         {
             var latex_cmd = latex_cmds[ idx ];
+            /*
+             * The full build sequence looks as follows:
+             *
+             *  1. tex to pdf -- creates `.aux` file
+             *  2. bibtex     -- creates `.ref` from `.aux` and `.bib` files
+             *  3. tex to pdf -- creates citation entries from `.ref` file
+             *  4. tex to pdf -- updates citations in text
+             */
             build_types[ build_names[ idx ] ] = new CommandSequence.from_string(
                 """
                 mkdir -p "$BUILD_DIR"
                 %s -output-directory "$BUILD_DIR" "$INPUT"
                 %s: bibtex "$OUTPUT.aux"
                 %s: $latex_cmd -output-directory "$BUILD_DIR" "$INPUT"
+                %s: $latex_cmd -output-directory "$BUILD_DIR" "$INPUT"
                 %s
-                """.printf( latex_cmd, MODE_FULL, MODE_FULL, COMMAND_PREVIEW ) );
+                """.printf( latex_cmd, MODE_FULL, MODE_FULL, MODE_FULL, COMMAND_PREVIEW ) );
         }
     }
 
@@ -57,9 +72,9 @@ public class BuildManager
         var build_dir = Path.build_path( Path.DIR_SEPARATOR_S, base_dir, ".build" + Path.DIR_SEPARATOR_S );
         var    output = get_output( input.path, build_dir );
         var   context = new CommandContext( base_dir );
-        context.variables[     "INPUT" ] = input.path;
-        context.variables[ "BUILD_DIR" ] = build_dir;
-        context.variables[    "OUTPUT" ] = output;
+        context.variables[     VAR_INPUT ] = input.path;
+        context.variables[ VAR_BUILD_DIR ] = build_dir;
+        context.variables[    VAR_OUTPUT ] = output;
         context.special_commands.add( COMMAND_PREVIEW );
         return context;
     }

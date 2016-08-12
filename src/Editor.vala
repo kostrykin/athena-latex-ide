@@ -23,7 +23,6 @@ class Editor : Gtk.Box
     }
 
     private Gtk.ListStore    files      = new Gtk.ListStore( 3, typeof( string ), typeof( string ), typeof( string ) );
-    private Session          session    = new Session();
     private Gtk.Stack        stack      = new Gtk.Stack(); 
     private Gtk.Toolbar      toolbar    = new Gtk.Toolbar();
     private Gtk.MenuItem     mnu_reload = new Gtk.MenuItem.with_label( "Reload" );
@@ -35,6 +34,7 @@ class Editor : Gtk.Box
 
     private Gee.Map< FileManager.File, SourceView > source_views = new Gee.HashMap< FileManager.File, SourceView >();
 
+    public Session session { private set; public get; default = new Session(); }
     public FileManager.File? current_file { private set; public get; }
 
     public signal void file_opened( FileManager.File file );
