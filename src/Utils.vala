@@ -11,4 +11,14 @@ class Utils
         return a > b ? a : b;
     }
 
+    public static double mind( double a, double b )
+    {
+        return a < b ? a : b;
+    }
+
+    public static double maxd( double a, double b )
+    {
+        return a > b ? a : b;
+    }
+
 }

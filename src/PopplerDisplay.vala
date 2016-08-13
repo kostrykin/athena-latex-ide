@@ -18,11 +18,14 @@ public class PopplerDisplay : Gtk.Box
     {
         set
         {
-            var adj = v_adjustment;
-            var rel = ( adj.value + adj.page_size / 2 - adj.lower ) / ( adj.upper - adj.lower );
+            var v_adj = v_adjustment;
+            var h_adj = h_adjustment;
+            var v_rel = ( v_adj.value + v_adj.page_size / 2 - v_adj.lower ) / ( v_adj.upper - v_adj.lower );
+            var h_rel = ( h_adj.value + h_adj.page_size / 2 - h_adj.lower ) / ( h_adj.upper - h_adj.lower );
             _zoom = value;
             update_adjustments();
-            adj.value = rel * ( adj.upper - adj.lower ) - adj.page_size / 2 + adj.lower;
+            v_adj.value = v_rel * ( v_adj.upper - v_adj.lower ) - v_adj.page_size / 2 + v_adj.lower;
+            h_adj.value = h_rel * ( h_adj.upper - h_adj.lower ) - h_adj.page_size / 2 + h_adj.lower;
             update_renderer_scale();
         }
         get
@@ -112,8 +115,8 @@ public class PopplerDisplay : Gtk.Box
         v_adjustment.step_increment = 1;
 
         h_adjustment.page_size = get_allocated_width() * v_adjustment.page_size / get_allocated_height();
-        h_adjustment.lower = -max_page_width / 2;
-        h_adjustment.upper =  max_page_width / 2 + h_adjustment.page_size;
+        h_adjustment.lower = Utils.mind( 0, ( h_adjustment.page_size - max_page_width ) / 2);
+        h_adjustment.upper = Utils.maxd( 0, ( h_adjustment.page_size + max_page_width ) / 2);
         h_adjustment.page_increment = 1;
         h_adjustment.step_increment = 1;
     }
@@ -173,24 +176,28 @@ public class PopplerDisplay : Gtk.Box
         /* Draw pages [first...last] at `y_lookup` locations.
          */
         context.set_source_rgba( 1, 1, 1, 1 );
-        var v_adj = v_adjustment;
-        var h_adj = h_adjustment;
         var scale = renderer.scale;
+        PopplerRenderer.Result result;
         for( int page_idx = renderer.first_page; page_idx <= renderer.last_page; ++page_idx )
         {
-            var y = y_lookup[ page_idx ] - v_adjustment.value;
+            var y = get_allocated_height() * ( y_lookup[ page_idx ] - v_adjustment.value ) / v_adjustment.page_size;
             var w = scale * pages[ page_idx ].width;
             var h = scale * pages[ page_idx ].height;
-            var x = get_allocated_width() / 2 - w / 2 - h_adjustment.value;
+            var x = ( get_allocated_width() - w ) / 2 - scale * h_adjustment.value;
 
 	    context.rectangle( x, y, w, h );
 	    context.fill();
 
-            var rendering = renderer[ page_idx ];
-            if( rendering != null )
+            renderer.fetch_result( page_idx, out result );
+            if( result.rendering != null )
             {
-                context.set_source_surface( rendering, x, y );
+                var rendering_scale = w / result.width;
+                context.translate( x, y );
+                context.scale( rendering_scale, rendering_scale );
+                context.set_source_surface( result.rendering, 0, 0 );
                 context.paint();
+                context.scale( 1 / rendering_scale, 1 / rendering_scale );
+                context.translate( -x, -y );
             }
         }
 

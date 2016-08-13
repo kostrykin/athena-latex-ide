@@ -4,6 +4,8 @@ using Granite.Widgets;
 public class MainWindow : Gtk.Window
 {
 
+    public static Gtk.IconSize TOOLBAR_ICON_SIZE = Gtk.IconSize.BUTTON;
+
     private Gtk.Overlay overlay = new Gtk.Overlay();
     private Gtk.Paned   pane    = new Gtk.Paned ( Gtk.Orientation.HORIZONTAL );
     private Gtk.Stack   stack   = new Gtk.Stack();

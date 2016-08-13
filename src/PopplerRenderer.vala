@@ -32,8 +32,23 @@ public class PopplerRenderer
     private int mutex;
     private Thread< void* > render_thread;
 
+    public struct Result
+    {
+        public int width  { public get; internal set; }
+        public int height { public get; internal set; }
+
+        Surface? rendering;
+
+        internal void set( Result other )
+        {
+            this.width     = other.width;
+            this.height    = other.height;
+            this.rendering = other.rendering;
+        }
+    }
+
     private Poppler.Document document;
-    private Surface?[] page_renderings;
+    private Result[] page_renderings;
     private bool[] finished_pages;
 
     public signal void page_rendered( int page_idx );
@@ -41,16 +56,20 @@ public class PopplerRenderer
     public PopplerRenderer( Poppler.Document document )
     {
         this.document = document;
-        this.page_renderings = new Surface[ document.get_n_pages() ];
-        this.finished_pages  = new bool[ this.page_renderings.length ];
+        this.finished_pages  = new bool[ document.get_n_pages() ];
+        this.page_renderings = new Result[ this.finished_pages.length ];
+        for( int i = 0; i < this.page_renderings.length; ++i )
+        {
+            this.page_renderings[ i ] = new Result();
+        }
         invalidate();
     }
 
-    public Surface? get( int page_idx )
+    public void fetch_result( int page_idx, out Result result )
     {
         lock( mutex )
         {
-            return page_renderings[ page_idx ];
+            result.set( page_renderings[ page_idx ] );
         }
     }
 
@@ -137,10 +156,11 @@ public class PopplerRenderer
             {
                 var scale = this.scale;
                 var page_idx = pending_page_indices[ pending_page_idx ];
-                var rendering = render_page( scale, page_idx );
+                Result result;
+                render_page( out result, scale, page_idx );
                 lock( mutex )
                 {
-                    page_renderings[ page_idx ] = rendering;
+                    page_renderings[ page_idx ].set( result );
                     finished_pages[ page_idx ] = ( scale == this.scale );
 
                     /* Schedule one-time call-back (return false).
@@ -183,20 +203,19 @@ public class PopplerRenderer
         }
     }
 
-    private Surface render_page( double scale, int page_idx )
+    private void render_page( out Result result, double scale, int page_idx )
     {
         double dw, dh;
         var page = document.get_page( page_idx );
         page.get_size( out dw, out dh );
-        int width  = (int)( scale * dw + 0.5 );
-        int height = (int)( scale * dh + 0.5 );
+        result.width  = (int)( scale * dw + 0.5 );
+        result.height = (int)( scale * dh + 0.5 );
 
-        var surface = new ImageSurface( Format.ARGB32, width, height );
+        var surface = new ImageSurface( Format.ARGB32, result.width, result.height );
         var context = new Context( surface );
         context.scale( scale, scale );
         page.render( context );
-        return context.get_target();
-        
+        result.rendering = context.get_target();
     }
 
 }

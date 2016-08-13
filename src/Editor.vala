@@ -1,8 +1,6 @@
 class Editor : Gtk.Box
 {
 
-    private static Gtk.IconSize TOOLBAR_ICON_SIZE = Gtk.IconSize.BUTTON;
-
     private static Gtk.Image ICON_NEW;
     private static Gtk.Image ICON_OPEN;
     private static Gtk.Image ICON_SAVE;
@@ -15,11 +13,11 @@ class Editor : Gtk.Box
 
     static construct
     {
-        ICON_NEW     = new Gtk.Image.from_icon_name( "document-new-symbolic" , TOOLBAR_ICON_SIZE );
-        ICON_OPEN    = new Gtk.Image.from_icon_name( "document-open-symbolic", TOOLBAR_ICON_SIZE );
-        ICON_SAVE    = new Gtk.Image.from_icon_name( "document-save-symbolic", TOOLBAR_ICON_SIZE );
-        ICON_CLOSE   = new Gtk.Image.from_icon_name( "window-close-symbolic" , TOOLBAR_ICON_SIZE );
-        ICON_DETAILS = new Gtk.Image.from_icon_name( "open-menu-symbolic"    , TOOLBAR_ICON_SIZE );
+        ICON_NEW     = new Gtk.Image.from_icon_name( "document-new-symbolic" , MainWindow.TOOLBAR_ICON_SIZE );
+        ICON_OPEN    = new Gtk.Image.from_icon_name( "document-open-symbolic", MainWindow.TOOLBAR_ICON_SIZE );
+        ICON_SAVE    = new Gtk.Image.from_icon_name( "document-save-symbolic", MainWindow.TOOLBAR_ICON_SIZE );
+        ICON_CLOSE   = new Gtk.Image.from_icon_name( "window-close-symbolic" , MainWindow.TOOLBAR_ICON_SIZE );
+        ICON_DETAILS = new Gtk.Image.from_icon_name( "open-menu-symbolic"    , MainWindow.TOOLBAR_ICON_SIZE );
     }
 
     private Gtk.ListStore    files      = new Gtk.ListStore( 3, typeof( string ), typeof( string ), typeof( string ) );
@@ -166,7 +164,7 @@ class Editor : Gtk.Box
 
     private void setup_toolbar()
     {
-        toolbar.set_icon_size( TOOLBAR_ICON_SIZE );
+        toolbar.set_icon_size( MainWindow.TOOLBAR_ICON_SIZE );
 
         var btn_new = new Gtk.ToolButton( ICON_NEW, null );
         toolbar.add( btn_new );
