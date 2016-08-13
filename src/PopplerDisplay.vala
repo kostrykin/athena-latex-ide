@@ -3,15 +3,17 @@ public class PopplerDisplay : Gtk.Box
 
     private Gee.List< double? > y_lookup = new Gee.ArrayList< double? >();
     private Gtk.Adjustment  v_adjustment = new Gtk.Adjustment( 0, 0, 0, 0, 0, 0 );
+    private Gtk.Adjustment  h_adjustment = new Gtk.Adjustment( 0, 0, 0, 0, 0, 0 );
     private Gtk.Scrollbar    v_scrollbar;
     private PopplerRenderer     renderer;
 
+    private double max_page_width;
     private double mid_page_height;
 
     private double _spacing = 0;
     public  double  spacing { set { _spacing = value; update_model(); } get { return _spacing; } }
 
-    private double _zoom = 0.9;
+    private double _zoom = 1;
     public  double  zoom
     {
         set
@@ -44,6 +46,7 @@ public class PopplerDisplay : Gtk.Box
     public PopplerDisplay()
     {
         v_adjustment.value_changed.connect( update_viewport );
+        h_adjustment.value_changed.connect(      queue_draw );
     }
 
     public Gtk.Scrollbar create_scrollbar( Gtk.Orientation orientation )
@@ -52,7 +55,10 @@ public class PopplerDisplay : Gtk.Box
         {
 
             case Gtk.Orientation.VERTICAL:
-                return new Gtk.Scrollbar( Gtk.Orientation.VERTICAL, v_adjustment );
+                return new Gtk.Scrollbar( orientation, v_adjustment );
+
+            case Gtk.Orientation.HORIZONTAL:
+                return new Gtk.Scrollbar( orientation, h_adjustment );
 
             default:
                 assert_not_reached();
@@ -93,6 +99,7 @@ public class PopplerDisplay : Gtk.Box
             y_lookup.add( y );
             y += spacing + page->height;
             page_heights.insert_sorted_with_data( page->height, Gee.Functions.get_compare_func_for( typeof( double ) ) );
+            max_page_width = page->width > max_page_width ? page->width : max_page_width;
         }
         mid_page_height = page_heights.nth_data( page_heights.length() / 2 );
     }
@@ -103,6 +110,12 @@ public class PopplerDisplay : Gtk.Box
         v_adjustment.upper = y_lookup[ y_lookup.size - 1 ] + spacing + pages[ pages.length - 1 ].height;
         v_adjustment.page_increment = 1;
         v_adjustment.step_increment = 1;
+
+        h_adjustment.page_size = get_allocated_width() * v_adjustment.page_size / get_allocated_height();
+        h_adjustment.lower = -max_page_width / 2;
+        h_adjustment.upper =  max_page_width / 2 + h_adjustment.page_size;
+        h_adjustment.page_increment = 1;
+        h_adjustment.step_increment = 1;
     }
 
     public void fetch_viewport( out int first, out int last )
@@ -148,6 +161,7 @@ public class PopplerDisplay : Gtk.Box
     public override void size_allocate( Gtk.Allocation allocation )
     {
         base.size_allocate( allocation );
+        update_adjustments();
         update_renderer_scale();
     }
 
@@ -159,14 +173,15 @@ public class PopplerDisplay : Gtk.Box
         /* Draw pages [first...last] at `y_lookup` locations.
          */
         context.set_source_rgba( 1, 1, 1, 1 );
-        var adj = v_adjustment;
+        var v_adj = v_adjustment;
+        var h_adj = h_adjustment;
         var scale = renderer.scale;
         for( int page_idx = renderer.first_page; page_idx <= renderer.last_page; ++page_idx )
         {
-            var y = y_lookup[ page_idx ] - adj.value;
+            var y = y_lookup[ page_idx ] - v_adjustment.value;
             var w = scale * pages[ page_idx ].width;
             var h = scale * pages[ page_idx ].height;
-            var x = get_allocated_width() / 2 - w / 2;
+            var x = get_allocated_width() / 2 - w / 2 - h_adjustment.value;
 
 	    context.rectangle( x, y, w, h );
 	    context.fill();
