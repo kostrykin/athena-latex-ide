@@ -20,7 +20,7 @@ public class PopplerPreview : PdfPreview
     private PopplerDisplay display = new PopplerDisplay();
     private Gtk.Grid grid = new Gtk.Grid();
     private Gtk.Toolbar toolbar = new Gtk.Toolbar();
-    private Gtk.Scale zoom = new Gtk.Scale.with_range( Gtk.Orientation.HORIZONTAL, 1.0 / 3, 5, 0.1 );
+    private Gtk.Scale zoom;
 
     public PopplerPreview()
     {
@@ -31,6 +31,12 @@ public class PopplerPreview : PdfPreview
         grid.attach( display.create_scrollbar( Gtk.Orientation.HORIZONTAL ), 0, 1, 1, 1 );
 
         display.set( "expand", true );
+        display.min_zoom = ZOOM_STOPS[ 0 ];
+        display.max_zoom = ZOOM_STOPS[ ZOOM_STOPS.length - 1 ];
+        display.zoom_changed.connect( () => { zoom.set_value( display.zoom ); } );
+
+        zoom = new Gtk.Scale.with_range( Gtk.Orientation.HORIZONTAL, display.min_zoom, display.max_zoom, 0.1 );
+
         pack_end( grid, true, true );
         setup_toolbar();
     }

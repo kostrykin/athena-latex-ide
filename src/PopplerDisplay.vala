@@ -1,4 +1,4 @@
-public class PopplerDisplay : Gtk.Box
+public class PopplerDisplay : Gtk.DrawingArea
 {
 
     private Gee.List< double? > y_lookup = new Gee.ArrayList< double? >();
@@ -19,15 +19,20 @@ public class PopplerDisplay : Gtk.Box
     {
         set
         {
-            var v_adj = v_adjustment;
-            var h_adj = h_adjustment;
-            var v_rel = ( v_adj.value + v_adj.page_size / 2 - v_adj.lower ) / ( v_adj.upper - v_adj.lower );
-            var h_rel = ( h_adj.value + h_adj.page_size / 2 - h_adj.lower ) / ( h_adj.upper - h_adj.lower );
-            _zoom = value;
-            update_adjustments();
-            v_adj.value = v_rel * ( v_adj.upper - v_adj.lower ) - v_adj.page_size / 2 + v_adj.lower;
-            h_adj.value = h_rel * ( h_adj.upper - h_adj.lower ) - h_adj.page_size / 2 + h_adj.lower;
-            update_renderer_scale();
+            value = Utils.mind( max_zoom, Utils.maxd( min_zoom, value ) );
+            if( _zoom != value )
+            {
+                var v_adj = v_adjustment;
+                var h_adj = h_adjustment;
+                var v_rel = ( v_adj.value + v_adj.page_size / 2 - v_adj.lower ) / ( v_adj.upper - v_adj.lower );
+                var h_rel = ( h_adj.value + h_adj.page_size / 2 - h_adj.lower ) / ( h_adj.upper - h_adj.lower );
+                _zoom = value;
+                zoom_changed();
+                update_adjustments();
+                v_adj.value = v_rel * ( v_adj.upper - v_adj.lower ) - v_adj.page_size / 2 + v_adj.lower;
+                h_adj.value = h_rel * ( h_adj.upper - h_adj.lower ) - h_adj.page_size / 2 + h_adj.lower;
+                update_renderer_scale();
+            }
         }
         get
         {
@@ -36,6 +41,34 @@ public class PopplerDisplay : Gtk.Box
     }
 
     public double best_match_zoom_level { public get; private set; }
+
+    private double _min_zoom = 1e-1;
+    public  double  min_zoom
+    {
+        set
+        {
+            _min_zoom = value;
+            zoom = Utils.maxd( _min_zoom, zoom );
+        }
+        get
+        {
+            return _min_zoom;
+        }
+    }
+
+    private double _max_zoom = 1e+1;
+    public  double  max_zoom
+    {
+        set
+        {
+            _max_zoom = value;
+            zoom = Utils.mind( _max_zoom, zoom );
+        }
+        get
+        {
+            return _max_zoom;
+        }
+    }
 
     public struct PageShape
     {
@@ -49,13 +82,67 @@ public class PopplerDisplay : Gtk.Box
     private string? _pdf_path;
     public  string?  pdf_path { set { _pdf_path = value; reload(); } get { return _pdf_path; } }
 
+    public signal void zoom_changed();
     public signal void renderer_started();
     public signal void renderer_finished();
+
+    public double scroll_speed = 50.00;
+    public double   zoom_speed =  0.25;
 
     public PopplerDisplay()
     {
         v_adjustment.value_changed.connect( update_viewport );
         h_adjustment.value_changed.connect(      queue_draw );
+
+        draw.connect( do_draw );
+
+        add_events( Gdk.EventMask.BUTTON1_MOTION_MASK   // required in order to receive `motion_notify_event` while button is pressed
+                  | Gdk.EventMask.BUTTON_PRESS_MASK     // same as above, plus required in order to receive `button_press_event`
+                  | Gdk.EventMask.SCROLL_MASK           // required to receive `scroll_event`
+                  | Gdk.EventMask.SMOOTH_SCROLL_MASK ); // populates the `delta_x` and `delta_y` fields of the `scroll_event` argument
+
+        scroll_event.connect( ( event ) =>
+            {
+                if( ( event.state & Gdk.ModifierType.CONTROL_MASK ) != 0 )
+                {
+                    zoom -= event.delta_y * Math.sqrt( zoom ) * zoom_speed;
+                    return true;
+                }
+                else
+                {
+                    move_view( event.delta_x * scroll_speed, event.delta_y * scroll_speed );
+                    return true;
+                }
+            }
+        );
+
+        double mouse_x0 = 0, mouse_y0 = 0;
+        button_press_event.connect( ( event ) =>
+            {
+                mouse_x0 = event.x;
+                mouse_y0 = event.y;
+                return true;
+            }
+        );
+
+        motion_notify_event.connect( ( event ) =>
+            {
+                move_view( mouse_x0 - event.x, mouse_y0 - event.y );
+                mouse_x0 = event.x;
+                mouse_y0 = event.y;
+                return true;
+            }
+        );
+    }
+
+
+    public void move_view( double pixels_dx, double pixels_dy )
+    {
+        var scale = v_adjustment.page_size / get_allocated_height();
+        v_adjustment.value += pixels_dy * scale;
+        h_adjustment.value += pixels_dx * scale;
+        v_adjustment.value_changed();
+        h_adjustment.value_changed();
     }
 
     public Gtk.Scrollbar create_scrollbar( Gtk.Orientation orientation )
@@ -191,7 +278,7 @@ public class PopplerDisplay : Gtk.Box
         update_renderer_scale();
     }
 
-    public override bool draw( Cairo.Context context )
+    public bool do_draw( Cairo.Context context )
     {
         var style = get_style_context();
         style.render_background( context, 0, 0, get_allocated_width(), get_allocated_height() );
@@ -224,7 +311,9 @@ public class PopplerDisplay : Gtk.Box
             }
         }
 
-        return base.draw( context );
+        /* Stop event propagation.
+         */
+        return true;
     }
 
 }
