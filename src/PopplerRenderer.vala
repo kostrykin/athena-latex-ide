@@ -51,6 +51,8 @@ public class PopplerRenderer
     private Result[] page_renderings;
     private bool[] finished_pages;
 
+    public signal void started();
+    public signal void finished();
     public signal void page_rendered( int page_idx );
 
     public PopplerRenderer( Poppler.Document document )
@@ -103,6 +105,7 @@ public class PopplerRenderer
             if( render_thread == null )
             {
                 render_thread = new Thread< void* >.try( "Poppler Render Thread", render_pages );
+                started();
             }
         }
     }
@@ -182,6 +185,15 @@ public class PopplerRenderer
                 {
                     render_thread = null;
                     done = true;
+
+                    /* Schedule one-time call-back (return false).
+                     */
+                    Idle.add( () =>
+                        {
+                            finished();
+                            return false;
+                        }
+                    );
                 }
             }
         }

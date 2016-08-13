@@ -1,6 +1,19 @@
 public class PopplerPreview : PdfPreview
 {
 
+    private static Gtk.Image ICON_ZOOM_IN;
+    private static Gtk.Image ICON_ZOOM_OUT;
+    private static Gtk.Image ICON_ZOOM_ORIGINAL;
+    private static Gtk.Image ICON_ZOOM_BEST_MATCH;
+
+    static construct
+    {
+        ICON_ZOOM_IN         = new Gtk.Image.from_icon_name( "zoom-in-symbolic"      , MainWindow.TOOLBAR_ICON_SIZE );
+        ICON_ZOOM_OUT        = new Gtk.Image.from_icon_name( "zoom-out-symbolic"     , MainWindow.TOOLBAR_ICON_SIZE );
+        ICON_ZOOM_ORIGINAL   = new Gtk.Image.from_icon_name( "zoom-original-symbolic", MainWindow.TOOLBAR_ICON_SIZE );
+        ICON_ZOOM_BEST_MATCH = new Gtk.Image.from_icon_name( "zoom-fit-best-symbolic", MainWindow.TOOLBAR_ICON_SIZE );
+    }
+
     private PopplerDisplay display = new PopplerDisplay();
     private Gtk.Grid grid = new Gtk.Grid();
     private Gtk.Toolbar toolbar = new Gtk.Toolbar();
@@ -28,11 +41,35 @@ public class PopplerPreview : PdfPreview
     {
         toolbar.set_icon_size( MainWindow.TOOLBAR_ICON_SIZE );
 
+        var btn_zoom_best_match = new Gtk.ToolButton( ICON_ZOOM_BEST_MATCH, null );
+        toolbar.add( btn_zoom_best_match );
+        btn_zoom_best_match.clicked.connect( zoom_best_match );
+        btn_zoom_best_match.show();
+
+        var btn_zoom_original = new Gtk.ToolButton( ICON_ZOOM_ORIGINAL, null );
+        toolbar.add( btn_zoom_original );
+        toolbar.add( new Gtk.SeparatorToolItem() );
+        btn_zoom_original.clicked.connect( zoom_original );
+        btn_zoom_original.show();
+
+        var btn_zoom_out = new Gtk.ToolButton( ICON_ZOOM_OUT, null );
+        toolbar.add( btn_zoom_out );
+        btn_zoom_out.clicked.connect( zoom_out );
+        btn_zoom_out.show();
+
         var zoom_toolitem = new Gtk.ToolItem();
         zoom_toolitem.add( zoom );
         zoom_toolitem.set_expand( true );
         toolbar.add( zoom_toolitem );
 
+        var btn_zoom_in = new Gtk.ToolButton( ICON_ZOOM_IN, null );
+        toolbar.add( btn_zoom_in );
+        btn_zoom_in.clicked.connect( zoom_in );
+        btn_zoom_in.show();
+
+        zoom.clear_marks();
+        zoom.set_draw_value( false );
+        zoom.set_has_origin( true );
         zoom.set_value( display.zoom );
         zoom.value_changed.connect( () =>
             {
@@ -40,8 +77,35 @@ public class PopplerPreview : PdfPreview
             }
         );
 
+        var busy_toolitem = new Gtk.ToolItem();
+        var busy_view = new LoadingIndicator( MainWindow.TOOLBAR_ICON_SIZE );
+        busy_toolitem.add( busy_view );
+        busy_toolitem.show_all();
+        toolbar.add( new Gtk.SeparatorToolItem() );
+        toolbar.add( busy_toolitem );
+
+        busy_view.fade_out( LoadingIndicator.FADE_IMMEDIATELY );
+        display.renderer_started .connect( () => { busy_view.fade_in ( 5.0 ); } );
+        display.renderer_finished.connect( () => { busy_view.fade_out( 1.0 ); } );
+
         toolbar.set_hexpand( true );
 	pack_start( toolbar, false, false );
+    }
+
+    public void zoom_in()
+    {
+    }
+
+    public void zoom_out()
+    {
+    }
+
+    public void zoom_original()
+    {
+    }
+
+    public void zoom_best_match()
+    {
     }
 
 }

@@ -1,5 +1,11 @@
+PopplerPreview > GtkToolbar,
 Editor > GtkToolbar {
   padding: 2px;
+}
+
+PopplerPreview > GtkToolbar {
+  padding-bottom: 3px;
+  padding-right: 5px;
 }
 
 #files-view > .button,

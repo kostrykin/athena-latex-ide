@@ -46,6 +46,9 @@ public class PopplerDisplay : Gtk.Box
     private string? _pdf_path;
     public  string?  pdf_path { set { _pdf_path = value; reload(); } get { return _pdf_path; } }
 
+    public signal void renderer_started();
+    public signal void renderer_finished();
+
     public PopplerDisplay()
     {
         v_adjustment.value_changed.connect( update_viewport );
@@ -80,6 +83,8 @@ public class PopplerDisplay : Gtk.Box
         pages = new PageShape[ document.get_n_pages() ];
         this.renderer = new PopplerRenderer( document );
         this.renderer.page_rendered.connect( handle_rendered_page );
+        this.renderer .started.connect( () => { renderer_started (); } );
+        this.renderer.finished.connect( () => { renderer_finished(); } );
         this.update_model();
         this.update_renderer_scale();
     }
