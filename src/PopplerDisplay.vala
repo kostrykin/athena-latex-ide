@@ -8,6 +8,7 @@ public class PopplerDisplay : Gtk.Box
     private PopplerRenderer     renderer;
 
     private double max_page_width;
+    private double mid_page_width;
     private double mid_page_height;
 
     private double _spacing = 0;
@@ -33,6 +34,8 @@ public class PopplerDisplay : Gtk.Box
             return _zoom;
         }
     }
+
+    public double best_match_zoom_level { public get; private set; }
 
     public struct PageShape
     {
@@ -99,6 +102,7 @@ public class PopplerDisplay : Gtk.Box
     {
         y_lookup.clear();
         double y = 0;
+        List< double? > page_widths  = new List< double? >();
         List< double? > page_heights = new List< double? >();
         for( int page_idx = 0; page_idx < pages.length; ++page_idx )
         {
@@ -106,9 +110,11 @@ public class PopplerDisplay : Gtk.Box
             renderer.get_page_size( page_idx, out page->width, out page->height );
             y_lookup.add( y );
             y += spacing + page->height;
+            page_widths .insert_sorted_with_data( page->width , Gee.Functions.get_compare_func_for( typeof( double ) ) );
             page_heights.insert_sorted_with_data( page->height, Gee.Functions.get_compare_func_for( typeof( double ) ) );
             max_page_width = page->width > max_page_width ? page->width : max_page_width;
         }
+        mid_page_width  = page_widths .nth_data( page_widths .length() / 2 );
         mid_page_height = page_heights.nth_data( page_heights.length() / 2 );
     }
 
@@ -124,6 +130,18 @@ public class PopplerDisplay : Gtk.Box
         h_adjustment.upper = Utils.maxd( 0, ( h_adjustment.page_size + max_page_width ) / 2);
         h_adjustment.page_increment = 1;
         h_adjustment.step_increment = 1;
+
+        /* Compute how the zoom level is to be chosen s.t. the whole page width fits into the screen.
+         *
+         *   h_adjustment.page_size == mid_page_width
+         * <=>
+         *   get_allocated_width() * v_adjustment.page_size / get_allocated_height() == mid_page_width
+         * <=>
+         *   get_allocated_width() * mid_page_height / zoom == mid_page_width * get_allocated_height()
+         * <=>
+         *   get_allocated_width() * mid_page_height / ( mid_page_width * get_allocated_height() ) == zoom
+         */
+        best_match_zoom_level = get_allocated_width() * mid_page_height / ( mid_page_width * get_allocated_height() );
     }
 
     public void fetch_viewport( out int first, out int last )

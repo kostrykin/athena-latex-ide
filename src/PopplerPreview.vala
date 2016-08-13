@@ -1,6 +1,9 @@
 public class PopplerPreview : PdfPreview
 {
 
+    private static const double ZOOM_LEVEL_EPSILON = 0.1;
+    private static const double ZOOM_STOPS[] = { 1.0 / 3, 1.0 / 2, 1, 1.5, 2, 2.5, 3, 4, 5 };
+
     private static Gtk.Image ICON_ZOOM_IN;
     private static Gtk.Image ICON_ZOOM_OUT;
     private static Gtk.Image ICON_ZOOM_ORIGINAL;
@@ -69,7 +72,7 @@ public class PopplerPreview : PdfPreview
 
         zoom.clear_marks();
         zoom.set_draw_value( false );
-        zoom.set_has_origin( true );
+        zoom.set_has_origin( false );
         zoom.set_value( display.zoom );
         zoom.value_changed.connect( () =>
             {
@@ -92,20 +95,44 @@ public class PopplerPreview : PdfPreview
 	pack_start( toolbar, false, false );
     }
 
-    public void zoom_in()
-    {
-    }
-
+    /**
+     * Reduces the current zoom level to the next-lowest zoom stop.
+     */
     public void zoom_out()
     {
+        for( int i = ZOOM_STOPS.length - 1; i >= 0; --i )
+        {
+            if( ZOOM_STOPS[ i ] + ZOOM_LEVEL_EPSILON * ZOOM_STOPS[ i ] < display.zoom )
+            {
+                zoom.adjustment.value = ZOOM_STOPS[ i ];
+                break;
+            }
+        }
+    }
+
+    /**
+     * Increases the current zoom level to the next-highest zoom stop.
+     */
+    public void zoom_in()
+    {
+        for( int i = 0; i < ZOOM_STOPS.length; ++i )
+        {
+            if( ZOOM_STOPS[ i ] - ZOOM_LEVEL_EPSILON * ZOOM_STOPS[ i ] > display.zoom )
+            {
+                zoom.adjustment.value = ZOOM_STOPS[ i ];
+                break;
+            }
+        }
     }
 
     public void zoom_original()
     {
+        zoom.adjustment.value = 1;
     }
 
     public void zoom_best_match()
     {
+        zoom.adjustment.value = display.best_match_zoom_level;
     }
 
 }
