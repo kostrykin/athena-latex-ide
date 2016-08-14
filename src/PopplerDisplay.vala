@@ -106,7 +106,8 @@ public class PopplerDisplay : Gtk.DrawingArea
     public double scroll_speed = 50.00;
     public double   zoom_speed =  0.25;
 
-    public FlashingShapesControl flashing_shapes { public get; private set; default = new FlashingShapesControl( 25 ); }
+    public AnimationControl animations { public get; private set; default = new AnimationControl( 25 ); }
+    private Gee.List< Drawables.Shape > drawables = new Gee.LinkedList< Drawables.Shape >();
 
     public PopplerDisplay()
     {
@@ -114,7 +115,7 @@ public class PopplerDisplay : Gtk.DrawingArea
         h_adjustment.value_changed.connect(      queue_draw );
 
         draw.connect( do_draw );
-        flashing_shapes.invalidated.connect( queue_draw );
+        animations.invalidated.connect( queue_draw );
 
         add_events( Gdk.EventMask.BUTTON1_MOTION_MASK   // required in order to receive `motion_notify_event` while button is pressed
                   | Gdk.EventMask.BUTTON_PRESS_MASK     // same as above, plus required in order to receive `button_press_event`
@@ -155,19 +156,29 @@ public class PopplerDisplay : Gtk.DrawingArea
         );
     }
 
-
     public void move_view( double pixels_dx, double pixels_dy )
     {
         var scale = v_adjustment.page_size / get_allocated_height();
-        move_adjustments( scale * pixels_dx, scale * pixels_dy );
+        move_visible_area( scale * pixels_dx, scale * pixels_dy );
     }
 
-    public void move_adjustments( double dx, double dy )
+    /**
+     * Moves the visible area by the specified PDF coordinates.
+     */
+    public void move_visible_area( double dx, double dy )
+    {
+        set_visible_area( h_adjustment.value + dx, v_adjustment.value + dy );
+    }
+
+    /**
+     * Moves the visible area to the specified PDF coordinates.
+     */
+    public void set_visible_area( double x, double y )
     {
         if( pdf_path != null )
         {
-            v_adjustment.value += dy;
-            h_adjustment.value += dx;
+            v_adjustment.value = y;
+            h_adjustment.value = x;
             v_adjustment.value_changed();
             h_adjustment.value_changed();
         }
@@ -323,20 +334,23 @@ public class PopplerDisplay : Gtk.DrawingArea
         area.h = v_adjustment.page_size;
     }
 
-    private FlashingShapesControl.Drawable[] fetch_visible_shapes()
+    public double visible_area_width  { get { return h_adjustment.page_size; } }
+    public double visible_area_height { get { return v_adjustment.page_size; } }
+
+    private Drawables.Shape[] fetch_visible_drawables()
     {
-        FlashingShapesControl.Drawable[] shapes = new FlashingShapesControl.Drawable[ flashing_shapes.count ];
+        Drawables.Shape[] visible_drawables = new Drawables.Shape[ drawables.size ];
         Utils.RectD visible_area = Utils.RectD.empty();
         fetch_visible_area( ref visible_area );
-        var shape_idx = -1;
-        foreach( var shape in flashing_shapes )
+        var visible_drawable_idx = -1;
+        foreach( var drawable in drawables )
         {
-            if( shape.is_visible( visible_area ) )
+            if( drawable.is_visible( visible_area ) )
             {
-                shapes[ ++shape_idx ] = shape;
+                visible_drawables[ ++visible_drawable_idx ] = drawable;
             }
         }
-        return shapes[ 0 : 1 + shape_idx ];
+        return visible_drawables[ 0 : 1 + visible_drawable_idx ];
     }
 
     public void map_page_coordinates( int page_idx, ref double x, ref double y )
@@ -344,6 +358,18 @@ public class PopplerDisplay : Gtk.DrawingArea
     {
         y += y_lookup[ page_idx ];
         x -= pages[ page_idx ].width / 2;
+    }
+
+    public void add_drawable( Drawables.Shape drawable )
+    {
+        this.drawables.insert( 0, drawable );
+        this.queue_draw();
+    }
+
+    public void remove_drawable( Drawables.Shape drawable )
+    {
+        this.drawables.remove( drawable );
+        this.queue_draw();
     }
 
     public bool do_draw( Cairo.Context context )
@@ -385,10 +411,10 @@ public class PopplerDisplay : Gtk.DrawingArea
              */
             context.translate( get_allocated_width() / 2 - scale * h_adjustment.value, -scale * v_adjustment.value );
             context.scale( scale, scale );
-            var shapes = fetch_visible_shapes();
-            foreach( var shape in shapes )
+            var drawables = fetch_visible_drawables();
+            foreach( var drawable in drawables )
             {
-                shape.draw( context );
+                drawable.draw( context );
             }
         }
 

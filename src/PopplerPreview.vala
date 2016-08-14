@@ -156,7 +156,12 @@ public class PopplerPreview : PdfPreview
     {
         Utils.RectD global_rect = new Utils.RectD.copy( page_rect );
         display.map_page_coordinates( page, ref global_rect.x, ref global_rect.y );
-        display.flashing_shapes.flash( new Drawables.Box( global_rect, 1, 0.83, 0.37, 0.5, 1.0, 1 ), 3.5 );
+
+        var box = new Drawables.Box( global_rect, 1, 0.83, 0.37, 0.5, 0.8, 1 );
+        var box_animation = new Animations.FadeOut( box );
+        box_animation.finished.connect( () => { display.remove_drawable( box ); } );
+        display.add_drawable( box );
+        display.animations.start( box_animation, 3.5 );
 
         /* Check whether the `page_rect` is visible.
          * Change the viewport only if it isn't fully visible.
@@ -167,16 +172,29 @@ public class PopplerPreview : PdfPreview
         {
             /* Center view ontop of `global_rect`.
              */
-            var dx = global_rect.cx - visible_area.cx;
-            var dy = global_rect.cy - visible_area.cy;
-            display.move_adjustments( dx, dy );
+            double visible_area_center[] = { visible_area.cx, visible_area.cy };
+            double  global_rect_center[] = {  global_rect.cx,  global_rect.cy };
+            var move_animation = new Animations.Interpolation( visible_area_center, global_rect_center, ( center ) =>
+                {
+                    display.set_visible_area( center[ 0 ], center[ 1 ] - display.visible_area_height / 2 );
+                }
+                , ( value ) => { return ( 1 - Math.cos( value * Math.PI ) ) / 2; } // smooth start, smooth landing
+            );
+            display.animations.start( move_animation, 0.5 );
 
             /* Adapt zoom level if necessary.
              * If adapting, then leave a small margin.
              */
             if( global_rect.w > visible_area.w )
             {
-                display.zoom *= visible_area.w / ( global_rect.w * 1.05 );
+                var suggested_zoom = display.zoom * visible_area.w / ( global_rect.w * 1.05 );
+                var zoom_animation = new Animations.Interpolation( { display.zoom }, { suggested_zoom }, ( zoom ) =>
+                    {
+                        display.zoom = zoom[ 0 ];
+                    }
+                    , ( value ) => { return -Math.cos( ( 1 + value ) * Math.PI / 2 ); } // quick start, smooth landing
+                );
+                display.animations.start( zoom_animation, 0.5 );
             }
         }
     }

@@ -7,7 +7,8 @@ namespace Drawables
     public abstract class Shape
     {
     
-        public Utils.RectD? bounding_box { public set; protected get; default = null; }
+        public Utils.RectD? bounding_box { public get; protected set; default = null; }
+        public double opacity = 1;
     
         public Shape()
         {
@@ -19,17 +20,17 @@ namespace Drawables
             this.bounding_box = bounding_box;
         }
     
-        public abstract void draw( Context cr, double opacity );
+        public abstract void draw( Context cr );
     
-        public virtual bool is_disjoint( Utils.RectD rect )
+        public virtual bool is_visible( Utils.RectD visible_area )
         {
             if( bounding_box == null )
             {
-                return false;
+                return true;
             }
             else
             {
-                return bounding_box.is_disjoint( rect );
+                return !bounding_box.is_disjoint( visible_area );
             }
         }
     
@@ -59,7 +60,7 @@ namespace Drawables
             this.border_alpha = border_alpha;
         }
     
-        public override void draw( Context cr, double opacity )
+        public override void draw( Context cr )
         {
             cr.rectangle( rect.x, rect.y, rect.w, rect.h );
             cr.set_source_rgba( r, g, b, a * opacity );
