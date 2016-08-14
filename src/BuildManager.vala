@@ -30,7 +30,7 @@ public class BuildManager
             build_types[ build_names[ idx ] ] = new CommandSequence.from_string(
                 """
                 mkdir -p "$BUILD_DIR"
-                %s -output-directory "$BUILD_DIR" "$INPUT"
+                %s --output-directory "$BUILD_DIR" --synctex=1 "$INPUT"
                 %s: bibtex "$OUTPUT.aux"
                 %s: $latex_cmd -output-directory "$BUILD_DIR" "$INPUT"
                 %s: $latex_cmd -output-directory "$BUILD_DIR" "$INPUT"

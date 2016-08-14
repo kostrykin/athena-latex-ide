@@ -532,6 +532,14 @@ class Editor : Gtk.Box
         }
     }
 
+    public int current_file_line
+    {
+        get
+        {
+            return current_file != null ? source_views[ current_file ].current_line : -1;
+        }
+    }
+
     public bool is_buildable()
     {
         return build_input != null;

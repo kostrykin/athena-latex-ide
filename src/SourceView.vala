@@ -34,6 +34,23 @@ class SourceView : Gtk.ScrolledWindow
         }
     }
 
+    public int current_line
+    {
+        set
+        {
+            Gtk.TextIter iter;
+            buffer.get_iter_at_mark( out iter, buffer.get_insert() );
+            iter.set_line( value );
+            buffer.move_mark( buffer.get_insert(), iter );
+        }
+        get
+        {
+            Gtk.TextIter iter;
+            buffer.get_iter_at_mark( out iter, buffer.get_insert() );
+            return iter.get_line();
+        }
+    }
+
     public SourceView( FileManager.File file )
     {
         var buffer = new Gtk.SourceBuffer.with_language( LANGUAGE );

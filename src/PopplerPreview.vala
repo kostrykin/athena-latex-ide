@@ -29,7 +29,8 @@ public class PopplerPreview : PdfPreview
         grid.attach( display, 0, 0, 1, 1 );
         grid.attach( display.create_scrollbar( Gtk.Orientation.VERTICAL   ), 1, 0, 1, 1 );
         grid.attach( display.create_scrollbar( Gtk.Orientation.HORIZONTAL ), 0, 1, 1, 1 );
-
+        grid.no_show_all = true;
+ 
         display.set( "expand", true );
         display.min_zoom = ZOOM_STOPS[ 0 ];
         display.max_zoom = ZOOM_STOPS[ ZOOM_STOPS.length - 1 ];
@@ -39,10 +40,20 @@ public class PopplerPreview : PdfPreview
 
         pack_end( grid, true, true );
         setup_toolbar();
-    }
+   }
 
     public override void reload()
     {
+        if( pdf_path != null )
+        {
+            grid.no_show_all = false;
+            grid.show_all();
+            grid.no_show_all = true;
+        }
+        else
+        {
+            grid.hide();
+        }
         display.pdf_path = pdf_path;
     }
 
@@ -139,6 +150,35 @@ public class PopplerPreview : PdfPreview
     public void zoom_best_match()
     {
         zoom.adjustment.value = display.best_match_zoom_level;
+    }
+
+    public override void show_rect( int page, Utils.RectD page_rect )
+    {
+        Utils.RectD global_rect = new Utils.RectD.copy( page_rect );
+        display.map_page_coordinates( page, ref global_rect.x, ref global_rect.y );
+        display.flashing_shapes.flash( new Drawables.Box( global_rect, 1, 0.83, 0.37, 0.5, 1.0, 1 ), 3.5 );
+
+        /* Check whether the `page_rect` is visible.
+         * Change the viewport only if it isn't fully visible.
+         */
+        Utils.RectD visible_area = Utils.RectD.empty();
+        display.fetch_visible_area( ref visible_area );
+        if( global_rect.is_disjoint( visible_area ) )
+        {
+            /* Center view ontop of `global_rect`.
+             */
+            var dx = global_rect.cx - visible_area.cx;
+            var dy = global_rect.cy - visible_area.cy;
+            display.move_adjustments( dx, dy );
+
+            /* Adapt zoom level if necessary.
+             * If adapting, then leave a small margin.
+             */
+            if( global_rect.w > visible_area.w )
+            {
+                display.zoom *= visible_area.w / ( global_rect.w * 1.05 );
+            }
+        }
     }
 
 }

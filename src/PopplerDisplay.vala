@@ -12,7 +12,21 @@ public class PopplerDisplay : Gtk.DrawingArea
     private double mid_page_height;
 
     private double _spacing = 0;
-    public  double  spacing { set { _spacing = value; update_model(); } get { return _spacing; } }
+    public  double  spacing
+    {
+        set
+        {
+            if( pdf_path != null )
+            {
+                _spacing = value;
+                update_model();
+            }
+        }
+        get
+        {
+            return _spacing;
+        }
+    }
 
     private double _zoom = 1;
     public  double  zoom
@@ -22,16 +36,19 @@ public class PopplerDisplay : Gtk.DrawingArea
             value = Utils.mind( max_zoom, Utils.maxd( min_zoom, value ) );
             if( _zoom != value )
             {
-                var v_adj = v_adjustment;
-                var h_adj = h_adjustment;
-                var v_rel = ( v_adj.value + v_adj.page_size / 2 - v_adj.lower ) / ( v_adj.upper - v_adj.lower );
-                var h_rel = ( h_adj.value + h_adj.page_size / 2 - h_adj.lower ) / ( h_adj.upper - h_adj.lower );
-                _zoom = value;
-                zoom_changed();
-                update_adjustments();
-                v_adj.value = v_rel * ( v_adj.upper - v_adj.lower ) - v_adj.page_size / 2 + v_adj.lower;
-                h_adj.value = h_rel * ( h_adj.upper - h_adj.lower ) - h_adj.page_size / 2 + h_adj.lower;
-                update_renderer_scale();
+                if( pdf_path != null )
+                {
+                    var v_adj = v_adjustment;
+                    var h_adj = h_adjustment;
+                    var v_rel = ( v_adj.value + v_adj.page_size / 2 - v_adj.lower ) / ( v_adj.upper - v_adj.lower );
+                    var h_rel = ( h_adj.value + h_adj.page_size / 2 - h_adj.lower ) / ( h_adj.upper - h_adj.lower );
+                    _zoom = value;
+                    zoom_changed();
+                    update_adjustments();
+                    v_adj.value = v_rel * ( v_adj.upper - v_adj.lower ) - v_adj.page_size / 2 + v_adj.lower;
+                    h_adj.value = h_rel * ( h_adj.upper - h_adj.lower ) - h_adj.page_size / 2 + h_adj.lower;
+                    update_renderer_scale();
+                }
             }
         }
         get
@@ -89,12 +106,15 @@ public class PopplerDisplay : Gtk.DrawingArea
     public double scroll_speed = 50.00;
     public double   zoom_speed =  0.25;
 
+    public FlashingShapesControl flashing_shapes { public get; private set; default = new FlashingShapesControl( 25 ); }
+
     public PopplerDisplay()
     {
         v_adjustment.value_changed.connect( update_viewport );
         h_adjustment.value_changed.connect(      queue_draw );
 
         draw.connect( do_draw );
+        flashing_shapes.invalidated.connect( queue_draw );
 
         add_events( Gdk.EventMask.BUTTON1_MOTION_MASK   // required in order to receive `motion_notify_event` while button is pressed
                   | Gdk.EventMask.BUTTON_PRESS_MASK     // same as above, plus required in order to receive `button_press_event`
@@ -139,10 +159,18 @@ public class PopplerDisplay : Gtk.DrawingArea
     public void move_view( double pixels_dx, double pixels_dy )
     {
         var scale = v_adjustment.page_size / get_allocated_height();
-        v_adjustment.value += pixels_dy * scale;
-        h_adjustment.value += pixels_dx * scale;
-        v_adjustment.value_changed();
-        h_adjustment.value_changed();
+        move_adjustments( scale * pixels_dx, scale * pixels_dy );
+    }
+
+    public void move_adjustments( double dx, double dy )
+    {
+        if( pdf_path != null )
+        {
+            v_adjustment.value += dy;
+            h_adjustment.value += dx;
+            v_adjustment.value_changed();
+            h_adjustment.value_changed();
+        }
     }
 
     public Gtk.Scrollbar create_scrollbar( Gtk.Orientation orientation )
@@ -169,14 +197,17 @@ public class PopplerDisplay : Gtk.DrawingArea
             this.renderer.page_rendered.disconnect( handle_rendered_page );
             this.renderer.finish();
         }
-        Poppler.Document document = new Poppler.Document.from_file( Filename.to_uri( pdf_path ), "" );
-        pages = new PageShape[ document.get_n_pages() ];
-        this.renderer = new PopplerRenderer( document );
-        this.renderer.page_rendered.connect( handle_rendered_page );
-        this.renderer .started.connect( () => { renderer_started (); } );
-        this.renderer.finished.connect( () => { renderer_finished(); } );
-        this.update_model();
-        this.update_renderer_scale();
+        if( pdf_path != null )
+        {
+            Poppler.Document document = new Poppler.Document.from_file( Filename.to_uri( pdf_path ), "" );
+            pages = new PageShape[ document.get_n_pages() ];
+            this.renderer = new PopplerRenderer( document );
+            this.renderer.page_rendered.connect( handle_rendered_page );
+            this.renderer .started.connect( () => { renderer_started (); } );
+            this.renderer.finished.connect( () => { renderer_finished(); } );
+            this.update_model();
+            this.update_renderer_scale();
+        }
     }
 
     private void update_model()
@@ -233,18 +264,21 @@ public class PopplerDisplay : Gtk.DrawingArea
 
     public void fetch_viewport( out int first, out int last )
     {
-        for( first = 0; first < pages_count; ++first )
+        if( pdf_path != null )
         {
-            if( first + 1 == pages_count || y_lookup[ first + 1 ] >= v_adjustment.value )
+            for( first = 0; first < pages_count; ++first )
             {
-                break;
+                if( first + 1 == pages_count || y_lookup[ first + 1 ] >= v_adjustment.value )
+                {
+                    break;
+                }
             }
-        }
-        for( last = first; last < pages_count; ++last )
-        {
-            if( last + 1 == pages_count || y_lookup[ last + 1 ] >= v_adjustment.value + v_adjustment.page_size )
+            for( last = first; last < pages_count; ++last )
             {
-                break;
+                if( last + 1 == pages_count || y_lookup[ last + 1 ] >= v_adjustment.value + v_adjustment.page_size )
+                {
+                    break;
+                }
             }
         }
     }
@@ -274,8 +308,42 @@ public class PopplerDisplay : Gtk.DrawingArea
     public override void size_allocate( Gtk.Allocation allocation )
     {
         base.size_allocate( allocation );
-        update_adjustments();
-        update_renderer_scale();
+        if( pdf_path != null )
+        {
+            update_adjustments();
+            update_renderer_scale();
+        }
+    }
+
+    public void fetch_visible_area( ref Utils.RectD area )
+    {
+        area.x = h_adjustment.value - h_adjustment.page_size / 2;
+        area.y = v_adjustment.value;
+        area.w = h_adjustment.page_size;
+        area.h = v_adjustment.page_size;
+    }
+
+    private FlashingShapesControl.Drawable[] fetch_visible_shapes()
+    {
+        FlashingShapesControl.Drawable[] shapes = new FlashingShapesControl.Drawable[ flashing_shapes.count ];
+        Utils.RectD visible_area = Utils.RectD.empty();
+        fetch_visible_area( ref visible_area );
+        var shape_idx = -1;
+        foreach( var shape in flashing_shapes )
+        {
+            if( shape.is_visible( visible_area ) )
+            {
+                shapes[ ++shape_idx ] = shape;
+            }
+        }
+        return shapes[ 0 : 1 + shape_idx ];
+    }
+
+    public void map_page_coordinates( int page_idx, ref double x, ref double y )
+        requires( page_idx >= 0 && page_idx < pages.length )
+    {
+        y += y_lookup[ page_idx ];
+        x -= pages[ page_idx ].width / 2;
     }
 
     public bool do_draw( Cairo.Context context )
@@ -283,31 +351,44 @@ public class PopplerDisplay : Gtk.DrawingArea
         var style = get_style_context();
         style.render_background( context, 0, 0, get_allocated_width(), get_allocated_height() );
 
-        /* Draw pages [first...last] at `y_lookup` locations.
-         */
-        context.set_source_rgba( 1, 1, 1, 1 );
-        var scale = renderer.scale;
-        PopplerRenderer.Result result;
-        for( int page_idx = renderer.first_page; page_idx <= renderer.last_page; ++page_idx )
+        if( pdf_path != null )
         {
-            var y = get_allocated_height() * ( y_lookup[ page_idx ] - v_adjustment.value ) / v_adjustment.page_size;
-            var w = scale * pages[ page_idx ].width;
-            var h = scale * pages[ page_idx ].height;
-            var x = ( get_allocated_width() - w ) / 2 - scale * h_adjustment.value;
-
-	    context.rectangle( x, y, w, h );
-	    context.fill();
-
-            renderer.fetch_result( page_idx, out result );
-            if( result.rendering != null )
+            /* Draw pages [first...last] at `y_lookup` locations.
+             */
+            context.set_source_rgba( 1, 1, 1, 1 );
+            var scale = renderer.scale;
+            PopplerRenderer.Result result;
+            for( int page_idx = renderer.first_page; page_idx <= renderer.last_page; ++page_idx )
             {
-                var rendering_scale = w / result.width;
-                context.translate( x, y );
-                context.scale( rendering_scale, rendering_scale );
-                context.set_source_surface( result.rendering, 0, 0 );
-                context.paint();
-                context.scale( 1 / rendering_scale, 1 / rendering_scale );
-                context.translate( -x, -y );
+                double y = (int)( get_allocated_height() * ( y_lookup[ page_idx ] - v_adjustment.value ) / v_adjustment.page_size );
+                double w = (int)( scale * pages[ page_idx ].width  + 0.5 );
+                double h = (int)( scale * pages[ page_idx ].height + 0.5 );
+                double x = (int)( ( get_allocated_width() - w ) / 2 - scale * h_adjustment.value );
+
+	        context.rectangle( x, y, w, h );
+	        context.fill();
+
+                renderer.fetch_result( page_idx, out result );
+                if( result.rendering != null )
+                {
+                    var rendering_scale = w / result.width;
+                    context.translate( x, y );
+                    context.scale( rendering_scale, rendering_scale );
+                    context.set_source_surface( result.rendering, 0, 0 );
+                    context.paint();
+                    context.scale( 1 / rendering_scale, 1 / rendering_scale );
+                    context.translate( -x, -y );
+                }
+            }
+
+            /* Draw shapes.
+             */
+            context.translate( get_allocated_width() / 2 - scale * h_adjustment.value, -scale * v_adjustment.value );
+            context.scale( scale, scale );
+            var shapes = fetch_visible_shapes();
+            foreach( var shape in shapes )
+            {
+                shape.draw( context );
             }
         }
 

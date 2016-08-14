@@ -22,6 +22,8 @@ endforeach(VALA_SRC_FILE_ABS)
 add_definitions(${CFLAGS} -Wno-deprecated-declarations)
 vala_precompile(VALA_C ${VALA_SRC} PACKAGES gtk+-3.0 gtksourceview-3.0 granite poppler-glib OPTIONS --thread --target-glib=2.32)
 
-add_executable(athena ${VALA_C})
-target_link_libraries(athena ${DEPS_LIBRARIES} m)
+file(GLOB SYNCTEX_SRC_ABS ../lib/synctex/*.c)
+include_directories(../lib/synctex)
+add_executable(athena ${VALA_C} ${SYNCTEX_SRC_ABS})
+target_link_libraries(athena ${DEPS_LIBRARIES} m z)
 

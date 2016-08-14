@@ -21,8 +21,20 @@ public class MainWindow : Gtk.Window
     private Gtk.ListStore build_types = new Gtk.ListStore( 1, typeof( string ) );
     private Gtk.ComboBox  build_types_view;
 
+    private struct Build
+    {
+        CommandSequence.Run batch;
+        string source_file_path;
+        int source_file_line;
+
+        public Build( CommandSequence.Run batch )
+        {
+            this.batch = batch;
+        }
+    }
+
     private uint8 build_locked = 0;
-    private CommandSequence.Run? current_build = null;
+    private Build? current_build = null;
 
     private static const uint8 BUILD_LOCKED_BY_EDITOR         = 1 << 0;
     private static const uint8 BUILD_LOCKED_BY_ONGOING_BUILD  = 1 << 1;
@@ -192,8 +204,6 @@ public class MainWindow : Gtk.Window
         initialize_editor_pane();
         editor.open_new_file();
         stack.set_visible_child_name( "editor" );
-
-        preview.pdf_path = "/tmp/.build/test.pdf"; // FIXME: debug
     }
 
     private void open_previous()
@@ -216,6 +226,13 @@ public class MainWindow : Gtk.Window
          */
         if( build_locked == 0 && current_build == null && editor.is_buildable() )
         {
+            /* For convenience, we automatically save the currently open file, unless it has a conflict.
+             */
+            if( editor.current_file.has_flags( Session.FLAGS_MODIFIED ) && !editor.current_file.has_flags( Session.FLAGS_CONFLICT ) )
+            {
+                editor.save_current_file();
+            }
+
             Gtk.TreeIter itr;
             build_types.get_iter_from_string( out itr, "%u".printf( build_types_view.active ) );
 
@@ -227,11 +244,13 @@ public class MainWindow : Gtk.Window
 
             editor.session.output_path = "%s.pdf".printf( context.variables[ BuildManager.VAR_OUTPUT ] );
 
-            current_build = commands.prepare_run( context, mode );
-            current_build.step.connect( update_build_info );
-            current_build.done.connect( ( build, result ) => { exit_build( mode, result == 0 ); } );
-            current_build.special_command.connect( handle_special_command );
-            current_build.start();
+            current_build = new Build( commands.prepare_run( context, mode ) );
+            current_build.batch.step.connect( update_build_info );
+            current_build.batch.done.connect( ( build, result ) => { exit_build( mode, result == 0 ); } );
+            current_build.batch.special_command.connect( handle_special_command );
+            current_build.source_file_path = editor.current_file.path;
+            current_build.source_file_line = editor.current_file_line;
+            current_build.batch.start();
 
             set_buildable( BUILD_LOCKED_BY_ONGOING_BUILD, true );
         }
@@ -254,9 +273,17 @@ public class MainWindow : Gtk.Window
 
     private void update_preview()
     {
-        /* Reloads the preview implicitly.
+        /* The `pdf_path` update reloads the preview and re-initializes synctex implicitly.
          */
         preview.pdf_path = editor.session.output_path;
+
+        if( current_build != null )
+        {
+            if( !preview.show_from_source( current_build.source_file_path, current_build.source_file_line ) )
+            {
+                warning( "SyncTex display query failed for \"%s\"", current_build.source_file_path );
+            }
+        }
     }
 
     private void update_build_info( CommandSequence.Run build )
