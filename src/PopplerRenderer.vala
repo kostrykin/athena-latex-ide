@@ -62,7 +62,7 @@ public class PopplerRenderer
         this.page_renderings = new Result[ this.finished_pages.length ];
         for( int i = 0; i < this.page_renderings.length; ++i )
         {
-            this.page_renderings[ i ] = new Result();
+            this.page_renderings[ i ] = Result();
         }
         invalidate();
     }
