@@ -18,6 +18,7 @@ public class PopplerPreview : PdfPreview
     }
 
     private PopplerDisplay display = new PopplerDisplay();
+    private PopplerChoreographer choreographer;
     private Gtk.Grid grid = new Gtk.Grid();
     private Gtk.Toolbar toolbar = new Gtk.Toolbar();
     private Gtk.Scale zoom;
@@ -25,6 +26,7 @@ public class PopplerPreview : PdfPreview
     public PopplerPreview()
     {
         Object( orientation: Gtk.Orientation.VERTICAL, spacing: 0 );
+        choreographer = new PopplerChoreographer( display );
 
         grid.attach( display, 0, 0, 1, 1 );
         grid.attach( display.create_scrollbar( Gtk.Orientation.VERTICAL   ), 1, 0, 1, 1 );
@@ -138,7 +140,7 @@ public class PopplerPreview : PdfPreview
         {
             if( ZOOM_STOPS[ i ] + ZOOM_LEVEL_EPSILON * ZOOM_STOPS[ i ] < display.zoom )
             {
-                zoom.adjustment.value = ZOOM_STOPS[ i ];
+                choreographer.zoom_to( ZOOM_STOPS[ i ] );
                 break;
             }
         }
@@ -153,7 +155,7 @@ public class PopplerPreview : PdfPreview
         {
             if( ZOOM_STOPS[ i ] - ZOOM_LEVEL_EPSILON * ZOOM_STOPS[ i ] > display.zoom )
             {
-                zoom.adjustment.value = ZOOM_STOPS[ i ];
+                choreographer.zoom_to( ZOOM_STOPS[ i ] );
                 break;
             }
         }
@@ -161,12 +163,12 @@ public class PopplerPreview : PdfPreview
 
     public void zoom_original()
     {
-        zoom.adjustment.value = 1;
+        choreographer.zoom_to( 1 );
     }
 
     public void zoom_best_match()
     {
-        zoom.adjustment.value = display.best_match_zoom_level;
+        choreographer.zoom_to( display.best_match_zoom_level );
     }
 
     public override void show_rect( int page, Utils.RectD page_rect )
@@ -189,7 +191,6 @@ public class PopplerPreview : PdfPreview
         {
             /* Center view ontop of `global_rect`.
              */
-            var choreographer = new PopplerChoreographer( display );
             choreographer.pan_to( global_rect.cx, global_rect.cy );
 
             /* Adapt zoom level if necessary.

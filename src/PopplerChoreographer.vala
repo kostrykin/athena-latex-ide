@@ -3,9 +3,30 @@ public class PopplerChoreographer
 
     private PopplerDisplay display;
 
+    private enum AnimationType { ZOOM, PAN }
+    private AnimationControl.Animation? current_animations[ 2 ];
+
     public PopplerChoreographer( PopplerDisplay display )
     {
         this.display = display;
+    }
+
+    /**
+     * Starts the `animation` and ensures that only one animation from
+     * the same `type` will be running at the same time.
+     *
+     * If another animation of the same `type` is already running, than
+     * that other animation will be interrupted.
+     */
+    private void play( AnimationType type, AnimationControl.Animation animation, double duration )
+    {
+        if( current_animations[ type ] != null )
+        {
+            current_animations[ type ].kill();
+        }
+        animation.finished.connect( () => { current_animations[ type ] = null; } );
+        current_animations[ type ] = animation;
+        display.animations.start( animation, duration );
     }
 
     public void zoom_to( double dst_zoom )
@@ -16,7 +37,7 @@ public class PopplerChoreographer
             }
             , ( value ) => { return -Math.cos( ( 1 + value ) * Math.PI / 2 ); } // quick start, smooth landing
         );
-        display.animations.start( animation, 0.5 );
+        play( AnimationType.ZOOM, animation, 0.5 );
     }
 
     public void pan_to( double x, double y )
@@ -29,7 +50,7 @@ public class PopplerChoreographer
             }
             , ( value ) => { return ( 1 - Math.cos( value * Math.PI ) ) / 2; } // smooth start, smooth landing
         );
-        display.animations.start( animation, 0.5 );
+        play( AnimationType.PAN, animation, 0.5 );
     }
 
 }
