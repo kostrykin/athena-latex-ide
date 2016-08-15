@@ -189,29 +189,16 @@ public class PopplerPreview : PdfPreview
         {
             /* Center view ontop of `global_rect`.
              */
-            double visible_area_center[] = { visible_area.cx, visible_area.cy };
-            double  global_rect_center[] = {  global_rect.cx,  global_rect.cy };
-            var move_animation = new Animations.Interpolation( visible_area_center, global_rect_center, ( center ) =>
-                {
-                    display.set_visible_area( center[ 0 ], center[ 1 ] - display.visible_area_height / 2 );
-                }
-                , ( value ) => { return ( 1 - Math.cos( value * Math.PI ) ) / 2; } // smooth start, smooth landing
-            );
-            display.animations.start( move_animation, 0.5 );
+            var choreographer = new PopplerChoreographer( display );
+            choreographer.pan_to( global_rect.cx, global_rect.cy );
 
             /* Adapt zoom level if necessary.
              * If adapting, then leave a small margin.
              */
-            if( global_rect.w > visible_area.w )
+            if( global_rect.w > display.visible_area_width )
             {
                 var suggested_zoom = display.zoom * visible_area.w / ( global_rect.w * 1.05 );
-                var zoom_animation = new Animations.Interpolation( { display.zoom }, { suggested_zoom }, ( zoom ) =>
-                    {
-                        display.zoom = zoom[ 0 ];
-                    }
-                    , ( value ) => { return -Math.cos( ( 1 + value ) * Math.PI / 2 ); } // quick start, smooth landing
-                );
-                display.animations.start( zoom_animation, 0.5 );
+                choreographer.zoom_to( suggested_zoom );
             }
         }
     }

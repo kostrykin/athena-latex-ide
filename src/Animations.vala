@@ -17,7 +17,7 @@ namespace Animations
     }
 
 
-    public class Interpolation : AnimationControl.Animation
+    public class Interpol : AnimationControl.Animation
     {
         public delegate double Func( double value );
         public Func? non_linearity;
@@ -29,11 +29,11 @@ namespace Animations
         private double[] state_change;
         private double[] state;
 
-        public Interpolation( double[] state0, double[] state1, Callback callback, Func? non_linearity = null )
+        public Interpol( double[] state0, double[] state1, owned Callback callback, owned Func? non_linearity = null )
             requires( state0.length == state1.length )
         {
-            this.non_linearity = non_linearity;
-            this.callback = callback;
+            this.non_linearity = (owned) non_linearity;
+            this.callback = (owned) callback;
             this.state0 = state0;
             this.state_change = new double[ state0.length ];
             this.state = new double[ state0.length ];
