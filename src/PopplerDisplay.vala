@@ -142,7 +142,7 @@ public class PopplerDisplay : Gtk.DrawingArea
             {
                 mouse_x0 = event.x;
                 mouse_y0 = event.y;
-                return true;
+                return false;
             }
         );
 
@@ -163,7 +163,7 @@ public class PopplerDisplay : Gtk.DrawingArea
     }
 
     /**
-     * Moves the visible area by the specified PDF coordinates.
+     * Moves the visible area by the global PDF coordinates.
      */
     public void move_visible_area( double dx, double dy )
     {
@@ -171,7 +171,7 @@ public class PopplerDisplay : Gtk.DrawingArea
     }
 
     /**
-     * Moves the visible area to the specified PDF coordinates.
+     * Moves the visible area to the global PDF coordinates.
      */
     public void set_visible_area( double x, double y )
     {
@@ -353,11 +353,42 @@ public class PopplerDisplay : Gtk.DrawingArea
         return visible_drawables[ 0 : 1 + visible_drawable_idx ];
     }
 
-    public void map_page_coordinates( int page_idx, ref double x, ref double y )
+    /**
+     * Maps `x` and `y` from the page's PDF coordinates to global PDF coordinates.
+     */
+    public void map_page_coordinates_to_global( int page_idx, ref double x, ref double y )
         requires( page_idx >= 0 && page_idx < pages.length )
     {
         y += y_lookup[ page_idx ];
         x -= pages[ page_idx ].width / 2;
+    }
+
+    public void map_pixels_to_global( ref double x, ref double y )
+    {
+        if( pdf_path != null )
+        {
+            var scale = renderer.scale;
+            y  = v_adjustment.value + y * v_adjustment.page_size / get_allocated_height();
+            x -= get_allocated_width() / 2;
+            x  = h_adjustment.value + x * h_adjustment.page_size / get_allocated_width ();
+        }
+    }
+
+    public void map_pixels_to_page_coordinates( ref double x, ref double y, out int page_idx )
+    {
+        if( pdf_path != null )
+        {
+            map_pixels_to_global( ref x, ref y );
+            for( page_idx = 0; page_idx < pages.length; ++page_idx )
+            {
+                if( page_idx + 1 == pages.length || y_lookup[ page_idx + 1 ] >= y )
+                {
+                    y -= y_lookup[ page_idx ];
+                    x += pages[ page_idx ].width / 2;
+                    break;
+                }
+            }
+        }
     }
 
     public void add_drawable( Drawables.Shape drawable )

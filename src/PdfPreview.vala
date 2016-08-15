@@ -98,4 +98,28 @@ public abstract class PdfPreview : Gtk.Box
         return false;
     }
 
+    public bool show_source_from_point( int page, double x, double y )
+        requires( scanner != null )
+    {
+        stdout.printf( "x: %g; y: %g\n", x, y );
+        /* SyncTeX counts pages starting from 1 on.
+         */
+        if( scanner.edit_query( page + 1, (float) x, (float) y ) > 0 )
+        {
+            var node = scanner.next_result();
+            if( node.valid )
+            {
+                /* SyncTeX counts code lines starting from 1 on.
+                 */
+                string file_path = scanner.get_name( node.tag );
+                source_requested( file_path, node.line - 1 );
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public signal void source_requested( string source_file_path, int source_line );
+
 }

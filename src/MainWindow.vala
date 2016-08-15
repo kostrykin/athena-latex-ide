@@ -62,6 +62,13 @@ public class MainWindow : Gtk.Window
         this.overlay.add( editor );
         this.add( stack );
 
+        preview.source_requested.connect( ( file_path, line ) =>
+            {
+                editor.open_file_from( file_path );
+                editor.current_file_line = line;
+            }
+        );
+
         set_buildable( 0, false );
     }
 

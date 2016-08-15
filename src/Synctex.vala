@@ -24,11 +24,17 @@ namespace Synctex
         [CCode (cname = "synctex_display_query")]
         extern int display_query( void* scanner, string name, int line, int column );
 
+        [CCode (cname = "synctex_edit_query")]
+        extern int edit_query( void* scanner, int page, float x, float y );
+
         [CCode (cname = "synctex_next_result")]
         extern void* next_result( void* scanner );
 
         [CCode (cname = "synctex_node_page")]
         extern int node_page( void* node );
+
+        [CCode (cname = "synctex_node_line")]
+        extern int node_line( void* node );
 
         [CCode (cname = "synctex_node_box_visible_h")]
         extern float node_box_visible_h( void* node );
@@ -85,6 +91,11 @@ namespace Synctex
                 return _impl_.display_query( scanner, name, line, column );
             }
 
+            public int edit_query( int page, float x, float y )
+            {
+                return _impl_.edit_query( scanner, page, x, y );
+            }
+
             public Node next_result()
             {
                 return new Node( this, _impl_.next_result( scanner ) );
@@ -109,8 +120,9 @@ namespace Synctex
             }
 
             public bool valid   { get { return node != null; } }
-            public int  tag     { get { return _impl_.node_tag( node ); } }
+            public int  tag     { get { return _impl_.node_tag ( node ); } }
             public int  page    { get { return _impl_.node_page( node ); } }
+            public int  line    { get { return _impl_.node_line( node ); } }
 
             public void sibling()
             {

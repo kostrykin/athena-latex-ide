@@ -41,7 +41,8 @@ class SourceView : Gtk.ScrolledWindow
             Gtk.TextIter iter;
             buffer.get_iter_at_mark( out iter, buffer.get_insert() );
             iter.set_line( value );
-            buffer.move_mark( buffer.get_insert(), iter );
+            buffer.place_cursor( iter );
+            view.scroll_to_iter( iter, 0, true, 0.5, 0.5 );
         }
         get
         {

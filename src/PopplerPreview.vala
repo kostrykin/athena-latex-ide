@@ -36,6 +36,23 @@ public class PopplerPreview : PdfPreview
         display.max_zoom = ZOOM_STOPS[ ZOOM_STOPS.length - 1 ];
         display.zoom_changed.connect( () => { zoom.set_value( display.zoom ); } );
 
+        display.add_events( Gdk.EventMask.BUTTON_PRESS_MASK );
+        display.button_press_event.connect( ( event ) =>
+            {
+                if( event.type == Gdk.EventType.@2BUTTON_PRESS )
+                {
+                    int page_idx;
+                    display.map_pixels_to_page_coordinates( ref event.x, ref event.y, out page_idx );
+                    show_source_from_point( page_idx, event.x, event.y );
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        );
+
         zoom = new Gtk.Scale.with_range( Gtk.Orientation.HORIZONTAL, display.min_zoom, display.max_zoom, 0.1 );
 
         pack_end( grid, true, true );
@@ -155,7 +172,7 @@ public class PopplerPreview : PdfPreview
     public override void show_rect( int page, Utils.RectD page_rect )
     {
         Utils.RectD global_rect = new Utils.RectD.copy( page_rect );
-        display.map_page_coordinates( page, ref global_rect.x, ref global_rect.y );
+        display.map_page_coordinates_to_global( page, ref global_rect.x, ref global_rect.y );
 
         var box = new Drawables.Box( global_rect, 1, 0.83, 0.37, 0.5, 0.8, 1 );
         var box_animation = new Animations.FadeOut( box );

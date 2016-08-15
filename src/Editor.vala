@@ -258,7 +258,7 @@ class Editor : Gtk.Box
         FileDialog.choose_readable_file_and( ( path ) => { open_file_from( path ); } );
     }
 
-    public FileManager.File open_file_from( string? path )
+    public FileManager.File open_file_from( string? path ) // FIXME: what happens if `path` can't be opened?
     {
         var position = path != null ? session.files.find_position( path ) : -1;
         if( position < 0 )
@@ -537,6 +537,13 @@ class Editor : Gtk.Box
         get
         {
             return current_file != null ? source_views[ current_file ].current_line : -1;
+        }
+        set
+        {
+            if( current_file != null )
+            {
+                source_views[ current_file ].current_line = value;
+            }
         }
     }
 
