@@ -41,7 +41,7 @@ public class LoadingIndicator : Gtk.DrawingArea
         time0 = time;
         this.rad = ( time * RAD_PER_SECOND ) % ( 2 * Math.PI );
         queue_draw();
-        return true;
+        return GLib.Source.CONTINUE;
     }
 
     public void fade_in( double per_second )

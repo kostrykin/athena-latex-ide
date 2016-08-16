@@ -1,4 +1,4 @@
-class Editor : Gtk.Box
+public class Editor : Gtk.Box
 {
 
     private static Gtk.Image ICON_NEW;
@@ -320,7 +320,7 @@ class Editor : Gtk.Box
 
     private void add_source_view( FileManager.File file )
     {
-        var source_view = new SourceView( file );
+        var source_view = new SourceView( this, file );
         source_view.buffer.text = file.get_contents();
         source_view.buffer.changed.connect( () =>
             {
@@ -523,12 +523,28 @@ class Editor : Gtk.Box
         }
     }
 
+    /**
+     * References the master file, or the current file otherwise, if
+     * it's been saved at some prior time. Otherwise, `null` is returned.
+     */
     public FileManager.File? build_input
     {
         get
         {
             var candidate = session.master != null ? session.master : current_file;
             return candidate != null && candidate.path != null ? candidate : null;
+        }
+    }
+
+    /**
+     * References the structure of the master file, or the current file otherwise.
+     */
+    public SourceStructure.Node? structure
+    {
+        get
+        {
+            var candidate = session.master != null ? session.master : current_file;
+            return candidate != null ? source_views[ candidate ].structure : null;
         }
     }
 

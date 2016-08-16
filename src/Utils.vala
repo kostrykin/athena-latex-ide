@@ -94,4 +94,11 @@ public class Utils
         }
     }
 
+    public static int count_char( string text, char c )
+    {
+        int count = 0;
+        for( int i = 0; i < text.length; ++i ) if( text[ i ] == c ) ++count;
+        return count;
+    }
+
 }

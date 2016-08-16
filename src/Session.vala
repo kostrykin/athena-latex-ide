@@ -1,4 +1,4 @@
-class Session
+public class Session
 {
 
     /**
