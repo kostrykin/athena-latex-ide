@@ -568,5 +568,54 @@ public class Editor : Gtk.Box
         return build_input != null;
     }
 
+    public SourceView? find_view_by_path( owned string path, SourceAnalyzer.FileReferenceType type, FileManager.File? parent = null )
+    {
+        if( ( type == SourceAnalyzer.FileReferenceType.SUB_REFERENCE )
+         || ( type == SourceAnalyzer.FileReferenceType.UNKNOWN && !Path.is_absolute( path ) ) )
+        {
+            /* We need to obtain the absolute file path.
+             *
+             * If no `parent` was specified, then use the `build_input` as parent.
+             * The `build_input` always has a `path`.
+             */
+            if( parent == null )
+            {
+                var build_input = this.build_input;
+                if( build_input == null ) return null;
+                parent = build_input;
+            }
+            else
+            if( parent.path == null ) return null;
+
+            GLib.File root_dir = GLib.File.new_for_path( parent.path ).get_parent();
+            var abs_path = root_dir.resolve_relative_path( path ).get_path();
+            if( abs_path == null ) return null; // i.e. the path resolution failed
+            path = abs_path;
+        }
+
+        foreach( var view in source_views.values )
+        {
+            var candidate_path = view.file.path;
+            if( candidate_path == null ) continue;
+            try
+            {
+                if( Utils.same_files( path, candidate_path ) )
+                {
+                    return view;
+                }
+            }
+            catch( Error err )
+            {
+                /* No information could be queried for `path`.
+                 * This behaviour is independent of the `candidate_path`,
+                 * hence it's fair to expect it for each subsequent candidate.
+                 */
+                break;
+            }
+        }
+
+        return null;
+    }
+
 }
 
