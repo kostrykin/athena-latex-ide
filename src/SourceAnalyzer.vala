@@ -8,19 +8,28 @@ public class SourceAnalyzer : Object
 
     private SourceAnalyzer()
     {
-        label_pattern = new Regex( """\\label{([A-Za-z0-9_:]+)}""" );
+        label_pattern = new Regex( """[^%]*\\label{([A-Za-z0-9_:]+)}""", RegexCompileFlags.ANCHORED );
     }
 
     public delegate bool StringHandler( string value );
 
     public void find_labels( string source, StringHandler handle )
     {
-        MatchInfo match;
-        label_pattern.match( source, 0, out match );
-        while( match.matches() )
+        int start = 0;
+        while( start + 1 < source.length )
         {
-            handle( match.fetch( 1 ) );
-            match.next();
+            int end = source.index_of_char( '\n', start );
+            if( end == -1 ) end = source.length - 1;
+
+            var line = source[ start : end ];
+            MatchInfo match;
+            label_pattern.match( line, 0, out match );
+            while( match.matches() )
+            {
+                handle( match.fetch( 1 ) );
+                match.next();
+            }
+            start = end + 1;
         }
     }
 
