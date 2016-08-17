@@ -15,9 +15,9 @@ public class SourceView : Gtk.ScrolledWindow
     private static Gtk.SourceStyleScheme STYLE_SCHEME;
 
     public FileManager.File file { public get; private set; }
-    public SourceStructure.InnerNode structure { public get; private set; default = new SourceStructure.InnerNode(); }
+    public SourceStructure.SimpleNode structure { public get; private set; default = new SourceStructure.SimpleNode(); }
 
-    private weak Editor editor;
+    public weak Editor editor { get; private set; }
     private Gtk.SourceView view;
 
     public Gtk.TextBuffer buffer
@@ -58,18 +58,35 @@ public class SourceView : Gtk.ScrolledWindow
 
     private class Partition : SourcePartitioning.Partition
     {
-        internal SourceStructure.InnerNode node = new SourceStructure.InnerNode();
-        internal SourceView view;
+        private SourceStructure.SimpleNode partition_root = new SourceStructure.SimpleNode();
+        private SourceView view;
+        private Gee.List< Utils.Destroyable > destroyables = new Gee.LinkedList< Utils.Destroyable >();
 
         internal Partition( SourceView view )
         {
             this.view = view;
-            view.structure.add_child( node );
+            view.structure.add_child( partition_root );
         }
 
+        /**
+         * Removes this partition's nodes from the source structure graph
+         * and also destroys those nodes, which must be destroyed explicitly.
+         */
         public override void destroy()
         {
-            node.remove_from_parent();
+            partition_root.remove_from_parents();
+            clear();
+        }
+
+        /**
+         * Clears this partitions's source structure graph and also destroys
+         * those nodes, which must be destroyed explicitly.
+         */
+        private void clear()
+        {
+            partition_root.remove_all_children();
+            foreach( var d in destroyables ) d.destroy();
+            destroyables.clear();
         }
 
         private SourceAnalyzer.StringHandler create_leafs( SourceStructure.Feature feature )
@@ -78,20 +95,23 @@ public class SourceView : Gtk.ScrolledWindow
             {
                 var leaf = new SourceStructure.Node();
                 leaf.features[ feature ] = value;
-                node.add_child( leaf );
+                partition_root.add_child( leaf );
             };
         }
 
         private void handle_file_reference( string path, SourceAnalyzer.FileReferenceType type )
         {
-            var node = view.resolve_file_reference( path, type );
-            if( node != view.structure && node != null ) this.node.add_child( node );
-            // TODO: add errors otherwise
+            var ref_node = new SourceStructure.FileReferenceNode( view, path, type );
+            partition_root.add_child( ref_node );
+            ref_node.resolve();
         }
-        
+       
+        /**
+         * Rebuilds the source structure graph of this partition.
+         */ 
         public override void update()
         {
-            node.remove_all_children();
+            clear();
             var analyzer = SourceAnalyzer.instance;
             var text = get_text( view.buffer );
 
@@ -128,7 +148,6 @@ public class SourceView : Gtk.ScrolledWindow
         view.override_font( DEFAULT_FONT );
         view.set_auto_indent( true );
         view.set_show_line_numbers( true );
-        //view.set_show_line_marks( true );
         view.set_wrap_mode( Gtk.WrapMode.WORD_CHAR );
 
         partitioning = new SourcePartitioning( buffer, () => { return new Partition( this ); } );
@@ -137,20 +156,33 @@ public class SourceView : Gtk.ScrolledWindow
         this.add( view );
     }
 
-    public SourceStructure.Node? resolve_file_reference( string path, SourceAnalyzer.FileReferenceType type )
+    /**
+     * Returns the absolute counterpart if `path` is relative, or just `path` if it already is absolute.
+     *
+     * If `path` isn't absolute but its resolution fails, then `null` is returned.
+     */
+    public string? resolve_path( string path, SourceAnalyzer.FileReferenceType path_type )
     {
-        FileManager.File? parent = null;
-        if( type == SourceAnalyzer.FileReferenceType.SUB_REFERENCE )
+        if( ( path_type == SourceAnalyzer.FileReferenceType.SUB_REFERENCE )
+         || ( path_type == SourceAnalyzer.FileReferenceType.UNKNOWN && !Path.is_absolute( path ) ) )
         {
-            /* Cannot resolve sub-reference as long as file,
-             * where the reference is encountered, wasn't saved.
-             */
-            if( file.path == null ) return null;
-            else parent = file;
-        }
+            FileManager.File? parent = null;
+            if( editor.build_input != null ) parent = editor.build_input;
+            else
+            {
+                if( this.file.path == null ) return null;
+                else parent = this.file;
+            }
 
-        var view = editor.find_view_by_path( path, type, parent );
-        return view == null ? null : view.structure;
+            GLib.File root_dir = GLib.File.new_for_path( parent.path ).get_parent();
+            var abs_path = root_dir.resolve_relative_path( path ).get_path();
+            if( abs_path == null ) return null; // i.e. the path resolution failed
+            return abs_path;
+        }
+        else
+        {
+            return path;
+        }
     }
 
 }

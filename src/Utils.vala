@@ -55,4 +55,9 @@ namespace Utils
         }
     }
 
+    public interface Destroyable : Object
+    {
+        public abstract void destroy();
+    }
+
 }

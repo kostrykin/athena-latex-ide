@@ -19,19 +19,28 @@ public class SourcePartitioning
     {
         this.buffer = buffer;
         this.partition_factory = (owned) partition_factory;
-        partition( DEFAULT_LINES_PER_PARTITION, true );
 
-        buffer.insert_text.connect_after( ( ref end, text, text_length ) =>
+        /* Wait for the control to return to the event loop before partitioning
+         * and installing the buffer callbacks, to avoid re-partitioning e.g.
+         * after something is loaded into the buffer.
+         */
+        Timeout.add( 0, () =>
             {
-                Gtk.TextIter start = Gtk.TextIter();
-                start.assign( end );
-                start.backward_chars( text_length );
-                update_with_start_end( start, end, true );
-            }
-        );
-        buffer.delete_range.connect( ( start, end ) =>
-            {
-                update_with_start_end( start, end, false );
+                buffer.insert_text.connect_after( ( ref end, text, text_length ) =>
+                    {
+                        Gtk.TextIter start = Gtk.TextIter();
+                        start.assign( end );
+                        start.backward_chars( text_length );
+                        update_with_start_end( start, end, true );
+                    }
+                );
+                buffer.delete_range.connect( ( start, end ) =>
+                    {
+                        update_with_start_end( start, end, false );
+                    }
+                );
+                partition( DEFAULT_LINES_PER_PARTITION, true );
+                return GLib.Source.REMOVE;
             }
         );
     }
@@ -108,8 +117,6 @@ public class SourcePartitioning
         
         /**
          * Updates the partition.
-         *
-         * Only called, if the partition is neither splitted nor merged.
          */
         public abstract void update();
 
@@ -173,29 +180,40 @@ public class SourcePartitioning
         {
             if( p.start.line <= first_affected_line && p.start.line + affected_line_count <= p.end.line )
             {
-                p.update();
                 invalidated_partitions[ invalidated_partitions_count++ ] = p;
             }
         }
 
         if( affected_line_count > 1 )
         {
+            var partitions_to_update = new Gee.HashSet< Partition >();
+
+            /* First, perform those split, which are necessary.
+             * Don't update any partitions yet, as they still may be merged later.
+             */
             var p_iter = partitions.list_iterator();
             for( int i = 0; i < invalidated_partitions_count; ++i )
             {
                 Partition p1 = null;
                 Partition p0 = invalidated_partitions[ i ];
+                partitions_to_update.add( p0 );
                 if( split_partition( p_iter, p0, out p1 ) )
                 {
                     p0.split( p1 );
-                }
-                else
-                {
-                    p0.update();
+                    partitions_to_update.add( p1 );
                 }
             }
 
-            merge_partitions();
+            merge_partitions( partitions_to_update );
+
+            foreach( var p in partitions_to_update ) p.update();
+        }
+        else
+        {
+            /* Since only one line was affected,
+             * also exactly one partition was invalidated.
+             */
+            invalidated_partitions[ 0 ].update();
         }
     }
 
@@ -224,7 +242,7 @@ public class SourcePartitioning
         }
     }
 
-    private void merge_partitions()
+    private void merge_partitions( Gee.Set< Partition > partitions_to_update )
     {
         var p1_iter = partitions.iterator();
         p1_iter.next();
@@ -239,6 +257,7 @@ public class SourcePartitioning
                 p0.end = p1.end;
                 p0.merge( p1 );
                 p1_iter.remove();
+                partitions_to_update.remove( p1 );
             }
 
             p0 = p1;

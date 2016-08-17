@@ -18,9 +18,9 @@ public class SourceAnalyzer : Object
 
     private SourceAnalyzer()
     {
-        include_pattern = create_simple_command_pattern(   "include" );
-          input_pattern = create_simple_command_pattern(     "input" );
-          label_pattern = create_simple_command_pattern(     "label" );
+        include_pattern = create_simple_command_pattern( "include" );
+          input_pattern = create_simple_command_pattern(   "input" );
+          label_pattern = create_simple_command_pattern(   "label" );
     }
 
     /**
