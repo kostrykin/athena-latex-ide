@@ -5,7 +5,7 @@ public class SourcePartitioning
 
     public class LineMark
     {
-        internal int line;
+        public int line { public get; internal set; }
 
         public LineMark( int line )
         {
@@ -13,7 +13,7 @@ public class SourcePartitioning
         }
     }
 
-    private Gee.PriorityQueue< LineMark > marks = new Gee.PriorityQueue< LineMark >( ( a, b ) => { return b.line - a.line; } );
+    private Gee.MultiMap< int, LineMark > marks = new Gee.TreeMultiMap< int, LineMark >( ( a, b ) => { return b - a; } );
 
     public SourcePartitioning( Gtk.TextBuffer buffer, owned PartitionFactory partition_factory )
     {
@@ -57,11 +57,18 @@ public class SourcePartitioning
     {
         if( lines != 0 )
         {
-            var iter = marks.iterator();
-            while( iter.next() )
+            var affected_marks = new LineMark[ marks.size ];
+            int affected_marks_count = 0;
+            foreach( var mark in marks.get_values() )
             {
-                LineMark mark = iter.@get();
-                if( mark.line > line0 ) mark.line += lines;
+                if( mark.line > line0 ) affected_marks[ affected_marks_count++ ] = mark;
+            }
+            for( int i = 0; i < affected_marks_count; ++i )
+            {
+                var mark = affected_marks[ i ];
+                marks.remove( mark.line, mark );
+                mark.line += lines;
+                marks[ mark.line ] = mark;
             }
         }
     }
@@ -72,8 +79,8 @@ public class SourcePartitioning
 
     public abstract class Partition
     {
-        internal LineMark start; ///< Marks the first line of this partition (inclusive).
-        internal LineMark end;   ///< Marks the last line of this partition (exclusive).
+        public LineMark start { public get; internal set; } ///< Marks the first line of this partition (inclusive).
+        public LineMark end   { public get; internal set; } ///< Marks the last line of this partition (exclusive).
 
         public int line_count { get { return end.line - start.line; } }
 
@@ -136,14 +143,14 @@ public class SourcePartitioning
         marks.clear();
 
         var start = new LineMark( 0 );
-        marks.add( start );
+        marks[ start.line ] = start;
         for( int line = 0; line <= buffer.get_line_count(); ++line )
         {
             if( line - start.line > lines_per_partition )
             {
                 var p = new_partition( start, new LineMark( line ) );
                 partitions.add( p );
-                marks.add( p.end );
+                marks[ p.end.line ] = p.end;
                 start = p.end;
             }
         }
@@ -152,7 +159,7 @@ public class SourcePartitioning
         {
             var end = new LineMark( buffer.get_line_count() );
             partitions.add( new_partition( start, end ) );
-            marks.add( end );
+            marks[ end.line ] = end;
         }
 
         if( run_update ) foreach( var p in partitions ) p.update();
@@ -203,7 +210,7 @@ public class SourcePartitioning
 
             p1 = new_partition( new LineMark( p0.start.line + lines0 ), p0.end );
             p0.end = p1.start;
-            marks.add( p1.start );
+            marks[ p1.start.line ] = p1.start;
 
             /* Move an iterator to the position of `p0` and insert `p1` behind.
              */
