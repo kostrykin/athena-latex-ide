@@ -367,7 +367,6 @@ public class PopplerDisplay : Gtk.DrawingArea
     {
         if( pdf_path != null )
         {
-            var scale = renderer.scale;
             y  = v_adjustment.value + y * v_adjustment.page_size / get_allocated_height();
             x -= get_allocated_width() / 2;
             x  = h_adjustment.value + x * h_adjustment.page_size / get_allocated_width ();
@@ -414,7 +413,7 @@ public class PopplerDisplay : Gtk.DrawingArea
              */
             context.set_source_rgba( 1, 1, 1, 1 );
             var scale = renderer.scale;
-            PopplerRenderer.Result result;
+            PopplerRenderer.Result result = PopplerRenderer.Result();
             for( int page_idx = renderer.first_page; page_idx <= renderer.last_page; ++page_idx )
             {
                 double y = (int)( get_allocated_height() * ( y_lookup[ page_idx ] - v_adjustment.value ) / v_adjustment.page_size );
@@ -425,7 +424,7 @@ public class PopplerDisplay : Gtk.DrawingArea
 	        context.rectangle( x, y, w, h );
 	        context.fill();
 
-                renderer.fetch_result( page_idx, out result );
+                renderer.fetch_result( page_idx, ref result );
                 if( result.rendering != null )
                 {
                     var rendering_scale = w / result.width;

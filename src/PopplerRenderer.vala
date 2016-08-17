@@ -67,7 +67,7 @@ public class PopplerRenderer
         invalidate();
     }
 
-    public void fetch_result( int page_idx, out Result result )
+    public void fetch_result( int page_idx, ref Result result )
     {
         lock( mutex )
         {
@@ -159,8 +159,8 @@ public class PopplerRenderer
             {
                 var scale = this.scale;
                 var page_idx = pending_page_indices[ pending_page_idx ];
-                Result result;
-                render_page( out result, scale, page_idx );
+                Result result = Result();
+                render_page( ref result, scale, page_idx );
                 lock( mutex )
                 {
                     page_renderings[ page_idx ].set( result );
@@ -215,7 +215,7 @@ public class PopplerRenderer
         }
     }
 
-    private void render_page( out Result result, double scale, int page_idx )
+    private void render_page( ref Result result, double scale, int page_idx )
     {
         double dw, dh;
         var page = document.get_page( page_idx );
