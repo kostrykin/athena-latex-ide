@@ -2,20 +2,27 @@ namespace SourceStructure
 {
 
     public enum Feature { LABEL, BIB_ENTRY }
+    public enum SearchResult { ALL_VISITED, CANCELED, ALREADY_VISITED }
 
     public class Node
     {
         public weak InnerNode? parent { public get; protected set; default = null; }
         public Gee.Map< Feature, string > features { public get; private set; default = new Gee.HashMap< Feature, string >(); }
 
-        public delegate bool Visitor( Node node );
-        public virtual bool search_feature( Feature feature, Visitor visit )
+        public static Gee.Set< Node > empty_visited_nodes_set()
         {
+            return new Gee.HashSet< Node >();
+        }
+
+        public delegate bool Visitor( Node node );
+        public virtual SearchResult search_feature( Feature feature, Visitor visit, Gee.Set< Node > visited = empty_visited_nodes_set() )
+        {
+            if( this in visited ) return SearchResult.ALREADY_VISITED;
             if( feature in features.keys )
             {
-                if( !visit( this ) ) return false;
+                if( !visit( this ) ) return SearchResult.CANCELED;
             }
-            return true;
+            return SearchResult.ALL_VISITED;
         }
 
         public bool remove_from_parent()
@@ -64,14 +71,31 @@ namespace SourceStructure
             while( children.size > 0 ) remove_child( children.first() );
         }
 
-        public override bool search_feature( Feature feature, Node.Visitor visit )
+        public override SearchResult search_feature( Feature feature, Node.Visitor visit, Gee.Set< Node > visited = Node.empty_visited_nodes_set() )
         {
-            if( !base.search_feature( feature, visit ) ) return false;
-            foreach( var child in children )
+            switch( base.search_feature( feature, visit, visited ) )
             {
-                if( !child.search_feature( feature, visit ) ) return false;
+
+            case SearchResult.CANCELED:
+                return SearchResult.CANCELED;
+
+            case SearchResult.ALREADY_VISITED:
+                return SearchResult.ALREADY_VISITED;
+
+            case SearchResult.ALL_VISITED:
+                foreach( var child in children )
+                {
+                    if( child.search_feature( feature, visit, visited ) == SearchResult.CANCELED )
+                    {
+                        return SearchResult.CANCELED;
+                    }
+                }
+                return SearchResult.ALL_VISITED;
+
+            default:
+                assert_not_reached();
+
             }
-            return true;
         }
     }
 
