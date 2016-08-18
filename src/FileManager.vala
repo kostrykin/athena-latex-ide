@@ -3,6 +3,8 @@ public class FileManager
 
     private static uint NEXT_NEW_FILE_INDEX = 1;
 
+    private static uint BYTE_CODE_LF = 0x0A;
+
     public class File
     {
         private string? _path;
@@ -90,7 +92,19 @@ public class FileManager
             }
             else
             {
-                file.replace_contents( contents.data, null, false, GLib.FileCreateFlags.NONE, null, null );
+                string? owned_contents = null;
+                unowned string encoded_contents = contents;
+
+                /* If the contents end with an empty line, at least on Linux,
+                 * we have to append another line feed at the end of the file,
+                 * in order to preserve that line.
+                 */
+                if( contents.length > 0 && contents.data[ contents.data.length - 1 ] == BYTE_CODE_LF )
+                {
+                    owned_contents = contents + "\n";
+                    encoded_contents = owned_contents;
+                }
+                file.replace_contents( encoded_contents.data, null, false, GLib.FileCreateFlags.NONE, null, null );
             }
         }
 
