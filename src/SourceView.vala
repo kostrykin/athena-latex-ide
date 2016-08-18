@@ -154,6 +154,7 @@ public class SourceView : Gtk.ScrolledWindow
         view.get_completion().add_provider( new ReferenceCompletionProvider( editor ) );
 
         this.add( view );
+        this.grab_focus.connect_after( () => { view.grab_focus(); } );
     }
 
     /**
