@@ -60,4 +60,10 @@ namespace Utils
         public abstract void destroy();
     }
 
+    public string format_hotkey( owned string hotkey )
+    {
+        hotkey = hotkey.replace( "<Control>", "Ctrl+" );
+        return "[%s]".printf( hotkey );
+    }
+
 }

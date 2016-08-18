@@ -6,13 +6,20 @@ public class MainWindow : Gtk.Window
 
     public static Gtk.IconSize TOOLBAR_ICON_SIZE = Gtk.IconSize.BUTTON;
 
-    private Gtk.Overlay overlay = new Gtk.Overlay();
-    private Gtk.Paned   pane    = new Gtk.Paned ( Gtk.Orientation.HORIZONTAL );
-    private Gtk.Stack   stack   = new Gtk.Stack();
-    private Editor      editor  = new Editor();
-    private PdfPreview  preview = new PopplerPreview();
+    public static const string HOTKEY_QUICK_BUILD = "F1";
+    public static const string HOTKEY_FULL_BUILD  = "F2";
+    public static const string HOTKEY_SAVE        = "<Control>S";
+    public static const string HOTKEY_OPEN        = "<Control>O";
+    public static const string HOTKEY_NEW         = "<Control>N";
+    public static const string HOTKEY_CLOSE       = "<Control>W";
 
-    private Granite.Widgets.OverlayBar build_info;
+    private Gtk.Overlay    overlay    = new Gtk.Overlay();
+    private Gtk.Paned      pane       = new Gtk.Paned ( Gtk.Orientation.HORIZONTAL );
+    private Gtk.Stack      stack      = new Gtk.Stack();
+    private Editor         editor     = new Editor();
+    private PdfPreview     preview    = new PopplerPreview();
+    private Gtk.AccelGroup hotkeys    = new Gtk.AccelGroup();
+    private OverlayBar     build_info;
 
     private Gtk.Button btn_quick_build = new Gtk.Button.with_label( "Quick Build" );
     private Gtk.Button btn_full_build  = new Gtk.Button.with_label( "Full" );
@@ -53,6 +60,7 @@ public class MainWindow : Gtk.Window
         this.setup_headerbar( app );
         this.setup_welcome_screen( app );
         this.setup_editor();
+        this.setup_hotkeys();
 
         this.build_info = new Granite.Widgets.OverlayBar( overlay );
         this.build_info.set_no_show_all( true );
@@ -61,6 +69,7 @@ public class MainWindow : Gtk.Window
         pane.pack2( preview, false, false );
         this.overlay.add( editor );
         this.add( stack );
+        this.add_accel_group( hotkeys );
 
         preview.source_requested.connect( ( file_path, line ) =>
             {
@@ -69,7 +78,7 @@ public class MainWindow : Gtk.Window
             }
         );
 
-        set_buildable( 0, false );
+        set_buildable( BUILD_LOCKED_BY_EDITOR, !editor.is_buildable() );
     }
 
     private void setup_build_types()
@@ -83,6 +92,52 @@ public class MainWindow : Gtk.Window
         );
     }
 
+    private delegate void HotkeyHandler( string hotkey );
+    private void add_hotkey( string hotkey, HotkeyHandler handler )
+    {
+        uint acl_key;
+        Gdk.ModifierType acl_mod;
+        Gtk.accelerator_parse( hotkey, out acl_key, out acl_mod );
+        hotkeys.connect( acl_key, acl_mod, Gtk.AccelFlags.VISIBLE,
+            ( accel_group, acceleratable, keyval, modifier ) =>
+            {
+                handler( hotkey );
+                return false;
+            }
+        );
+    }
+
+    private void handle_build_hotkey( string hotkey )
+    {
+        Gtk.Button? btn = null;
+        switch( hotkey )
+        {
+
+        case HOTKEY_QUICK_BUILD:
+            btn = btn_quick_build;
+            break;
+
+        case HOTKEY_FULL_BUILD:
+            btn = btn_full_build;
+            break;
+
+        default:
+            assert_not_reached();
+
+        }
+        if( btn.is_sensitive() ) btn.clicked();
+    }
+
+    private void setup_hotkeys()
+    {
+        add_hotkey( HOTKEY_QUICK_BUILD, handle_build_hotkey );
+        add_hotkey( HOTKEY_FULL_BUILD , handle_build_hotkey );
+        add_hotkey( HOTKEY_SAVE       , ( hotkey ) => { editor.save_current_file (); } );
+        add_hotkey( HOTKEY_OPEN       , ( hotkey ) => { editor.open_file         (); } );
+        add_hotkey( HOTKEY_NEW        , ( hotkey ) => { editor.open_new_file     (); } );
+        add_hotkey( HOTKEY_CLOSE      , ( hotkey ) => { editor.close_current_file(); } );
+    }
+
     private void setup_headerbar( Athena app )
     {
         var headerbar = new Gtk.HeaderBar();
@@ -93,12 +148,12 @@ public class MainWindow : Gtk.Window
 
         btn_full_build.name = "btn-full-build";
         btn_full_build.can_focus = false;
-        btn_full_build.tooltip_text = "Runs BibTeX and LaTeX twice. Updates all references and citations.";
+        btn_full_build.tooltip_text = "Runs BibTeX and LaTeX twice. Updates all references and citations. %s".printf( Utils.format_hotkey( HOTKEY_FULL_BUILD ) );
         btn_full_build.clicked.connect( () => { invoke_build( "full" ); } );
 
         btn_quick_build.name = "btn-quick-build";
         btn_quick_build.can_focus = false;
-        btn_quick_build.tooltip_text = "Only runs LaTeX. May produce outdated references or citations.";
+        btn_quick_build.tooltip_text = "Only runs LaTeX. May produce outdated references or citations. %s".printf( Utils.format_hotkey( HOTKEY_QUICK_BUILD ) );
         btn_quick_build.clicked.connect( () => { invoke_build( "quick" ); } );
 
         var box = new Gtk.Box( Gtk.Orientation.HORIZONTAL, 0 );

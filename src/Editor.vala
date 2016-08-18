@@ -170,16 +170,19 @@ public class Editor : Gtk.Box
         var btn_new = new Gtk.ToolButton( ICON_NEW, null );
         toolbar.add( btn_new );
         btn_new.clicked.connect( open_new_file );
+        btn_new.tooltip_text = "Open New File %s".printf( Utils.format_hotkey( MainWindow.HOTKEY_NEW ) );
         btn_new.show();
 
         var btn_open = new Gtk.ToolButton( ICON_OPEN, null );
         toolbar.add( btn_open );
         btn_open.clicked.connect( open_file );
+        btn_open.tooltip_text = "Load Saved File %s".printf( Utils.format_hotkey( MainWindow.HOTKEY_OPEN ) );
         btn_open.show();
 
         var btn_save = new Gtk.ToolButton( ICON_SAVE, null );
         toolbar.add( btn_save );
         btn_save.clicked.connect( save_current_file );
+        btn_save.tooltip_text = "Save %s".printf( Utils.format_hotkey( MainWindow.HOTKEY_SAVE ) );
         btn_save.show();
 
         files_view = new Gtk.ComboBox.with_model( files );
@@ -217,6 +220,7 @@ public class Editor : Gtk.Box
         btn_close.can_focus = false;
         btn_close.show();
         btn_close.clicked.connect( close_current_file );
+        btn_close.tooltip_text = "Close %s".printf( Utils.format_hotkey( MainWindow.HOTKEY_CLOSE ) );
         btn_close_toolitem.add( btn_close );
 
         toolbar.add( new Gtk.SeparatorToolItem() );
@@ -254,7 +258,7 @@ public class Editor : Gtk.Box
         open_file_from( null );
     }
 
-    private void open_file()
+    public void open_file()
     {
         FileDialog.choose_readable_file_and( ( path ) => { open_file_from( path ); } );
     }
