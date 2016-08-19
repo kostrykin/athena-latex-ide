@@ -14,7 +14,7 @@ public class SourceFileView : Gtk.ScrolledWindow
     private static Gtk.SourceLanguage    LANGUAGE;
     private static Gtk.SourceStyleScheme STYLE_SCHEME;
 
-    public SourceFileManager.SourceFile file { public get; private set; }
+    public weak SourceFileManager.SourceFile file { public get; private set; }
     public SourceStructure.SimpleNode structure { public get; private set; default = new SourceStructure.SimpleNode(); }
 
     public weak Editor editor { get; private set; }
@@ -60,7 +60,6 @@ public class SourceFileView : Gtk.ScrolledWindow
     {
         private SourceStructure.SimpleNode partition_root = new SourceStructure.SimpleNode();
         private SourceFileView view;
-        private Gee.List< Utils.Destroyable > destroyables = new Gee.LinkedList< Utils.Destroyable >();
 
         internal Partition( SourceFileView view )
         {
@@ -69,24 +68,19 @@ public class SourceFileView : Gtk.ScrolledWindow
         }
 
         /**
-         * Removes this partition's nodes from the source structure graph
-         * and also destroys those nodes, which must be destroyed explicitly.
+         * Removes this partition's nodes from the source structure graph.
          */
-        public override void destroy()
+        ~Partition()
         {
             partition_root.remove_from_parents();
-            clear();
         }
 
         /**
-         * Clears this partitions's source structure graph and also destroys
-         * those nodes, which must be destroyed explicitly.
+         * Clears this partitions's source structure graph.
          */
         private void clear()
         {
             partition_root.remove_all_children();
-            foreach( var d in destroyables ) d.destroy();
-            destroyables.clear();
         }
 
         private SourceAnalyzer.StringHandler create_leafs( SourceStructure.Feature feature )
@@ -128,7 +122,6 @@ public class SourceFileView : Gtk.ScrolledWindow
 
         public override void merge( SourcePartitioning.Partition successor )
         {
-            successor.destroy();
         }
     }
 
@@ -155,6 +148,13 @@ public class SourceFileView : Gtk.ScrolledWindow
 
         this.add( view );
         this.grab_focus.connect_after( () => { view.grab_focus(); } );
+    }
+
+    public override void destroy()
+    {
+        structure.remove_from_parents();
+        partitioning = null;
+        base.destroy();
     }
 
     /**

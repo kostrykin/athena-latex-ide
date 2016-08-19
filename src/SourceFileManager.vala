@@ -159,7 +159,6 @@ public class SourceFileManager
         ensures( result >= first )
         ensures( result <=  last )
     {
-        stdout.printf( "get_insert_position_for_named: first = %d, last = %d\n", first, last );
         if( last - first <= 1 )
         {
             if( path <= files[ first ].path )

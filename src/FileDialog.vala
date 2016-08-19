@@ -1,30 +1,14 @@
 class FileDialog : Gtk.FileChooserDialog
 {
 
-    private static Gee.Map< string, string > last_folders = new Gee.HashMap< string, string >();
-    private string context;
-
-    private FileDialog( string context )
+    private FileDialog()
     {
-        this.context = context;
         this.add_button( "_Cancel", Gtk.ResponseType.CANCEL );
         this.set_default_response ( Gtk.ResponseType.ACCEPT );
     }
 
-    public override void response( int type )
-    {
-        if( type == Gtk.ResponseType.ACCEPT )
-        {
-            last_folders[ context] = get_current_folder();
-        }
-    }
-
     private string? exec()
     {
-        if( context in last_folders )
-        {
-            this.set_current_folder( last_folders[ context ] );
-        }
         var result = this.run();
         if( result == Gtk.ResponseType.ACCEPT )
         {
@@ -41,27 +25,27 @@ class FileDialog : Gtk.FileChooserDialog
 
     public delegate void PathHandler( string path );
 
-    public static string? choose_readable_file( string context = "" )
+    public static string? choose_readable_file()
     {
-        var dlg = new FileDialog( context );
+        var dlg = new FileDialog();
         dlg.title = "Open File";
         dlg.add_button( "_Open", Gtk.ResponseType.ACCEPT );
         dlg.action = Gtk.FileChooserAction.OPEN;
         return dlg.exec();
     }
 
-    public static string? choose_writable_file( string context = "" )
+    public static string? choose_writable_file()
     {
-        var dlg = new FileDialog( context );
+        var dlg = new FileDialog();
         dlg.title = "Save File";
         dlg.add_button( "_Save", Gtk.ResponseType.ACCEPT );
         dlg.action = Gtk.FileChooserAction.SAVE;
         return dlg.exec();
     }
 
-    public static bool choose_readable_file_and( PathHandler handle, string context = "" )
+    public static bool choose_readable_file_and( PathHandler handle )
     {
-        string? path = choose_readable_file( context );
+        string? path = choose_readable_file();
         if( path == null )
         {      
             return false;
@@ -73,9 +57,9 @@ class FileDialog : Gtk.FileChooserDialog
         }
     }
 
-    public static bool choose_writable_file_and( PathHandler handle, string context = "" )
+    public static bool choose_writable_file_and( PathHandler handle )
     {
-        string? path = choose_writable_file( context );
+        string? path = choose_writable_file();
         if( path == null )
         {      
             return false;

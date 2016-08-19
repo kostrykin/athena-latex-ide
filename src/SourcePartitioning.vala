@@ -107,13 +107,6 @@ public class SourcePartitioning
             }
             return start_iter.get_text( end_iter );
         }
-
-        /**
-         * Destroys the partition.
-         *
-         * Only called, if the partition isn't merged into another one.
-         */
-        public abstract void destroy();
         
         /**
          * Updates the partition.
@@ -145,7 +138,6 @@ public class SourcePartitioning
 
     public void partition( int lines_per_partition, bool run_update )
     {
-        foreach( var p in partitions ) p.destroy();
         partitions.clear();
         marks.clear();
 

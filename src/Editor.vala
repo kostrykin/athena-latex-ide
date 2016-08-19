@@ -43,9 +43,11 @@ public class Editor : Gtk.Box
 
     private bool handle_files_view_changes = true;
 
+    public static WeakRef instance; // TODO: remove me
     public Editor()
     {
         Object( orientation: Gtk.Orientation.VERTICAL, spacing: 0 );
+        instance = WeakRef( this ); // TODO: remove me
         this.setup_infobars();
         this.pack_start( conflict_info_bar, false );
         this.setup_toolbar();
@@ -54,6 +56,12 @@ public class Editor : Gtk.Box
         this.stack.show();
 
         this.session.files.invalidated.connect( update_files_model );
+    }
+
+    public override void destroy()
+    {
+        this.session = null;
+        base.destroy();
     }
 
     private void setup_infobars()
@@ -332,6 +340,20 @@ public class Editor : Gtk.Box
                 session.files.set_flags( file.position, Session.FLAGS_MODIFIED );
             }
         );
+        add_file_changed_handler( this, file );
+        stack.add( source_view );
+        source_views[ file ] = source_view;
+        source_view.show_all();
+    }
+
+    private static void add_file_changed_handler( Editor self, SourceFileManager.SourceFile file )
+    {
+        /* There seems to be a `valac` bug here:
+         * The documentation states, that all function arguments are `weak` by default.
+         * Nevertheless, using the weak `self` directly inside of the closure causes a hard reference,
+         * while the usage of `weak_this` doesn't.
+         */
+        weak Editor weak_this = self;
         file.changed.connect( () =>
             {
                 /* We need to decide, whether the change occured by one of our own save
@@ -350,21 +372,17 @@ public class Editor : Gtk.Box
                  */
                 if( our_hash != file.hash )
                 {
-                    denote_conflict( file );
+                    weak_this.denote_conflict( file );
                 }
             }
         );
-        stack.add( source_view );
-        source_views[ file ] = source_view;
-        source_view.show_all();
     }
 
     private void remove_source_view( SourceFileManager.SourceFile file )
     {
         var source_view = source_views[ file ];
-        stack.remove( source_view );
         source_views.remove( file );
-        source_view.structure.remove_from_parents();
+        source_view.destroy();
     }
 
     public void save_current_file()

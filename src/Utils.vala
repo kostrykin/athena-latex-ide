@@ -55,11 +55,6 @@ namespace Utils
         }
     }
 
-    public interface Destroyable : Object
-    {
-        public abstract void destroy();
-    }
-
     public string format_hotkey( owned string hotkey )
     {
         hotkey = hotkey.replace( "<Control>", "Ctrl+" );

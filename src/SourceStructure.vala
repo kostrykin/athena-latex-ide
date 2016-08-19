@@ -6,7 +6,7 @@ namespace SourceStructure
 
     public class Node : Object
     {
-        private Gee.Set< InnerNode* > parents = new Gee.HashSet< InnerNode* >();
+        private Gee.Set< weak InnerNode > parents = new Gee.HashSet< InnerNode* >();
         public Gee.Map< Feature, string > features { get; private set; default = new Gee.HashMap< Feature, string >(); }
 
         public static Gee.Set< Node > empty_visited_nodes_set()
@@ -34,7 +34,11 @@ namespace SourceStructure
 
         public void remove_from_parents()
         {
-            foreach( var p in parents ) this.remove_from_parent( p );
+            foreach( var p in parents )
+            {
+                p.weak_unref( drop_parent );
+                p.drop_child( this );
+            }
             parents.clear();
         }
 
@@ -52,7 +56,7 @@ namespace SourceStructure
 
         private void drop_parent( Object parent )
         {
-            parents.remove( (Node) parent );
+            parents.remove( (InnerNode) parent );
         }
     }
 
@@ -122,7 +126,7 @@ namespace SourceStructure
         }
     }
 
-    public class FileReferenceNode : Node, InnerNode, Utils.Destroyable
+    public class FileReferenceNode : Node, InnerNode
     {
         private SourceFileView parent_view;
         private string path;
@@ -138,7 +142,7 @@ namespace SourceStructure
 
         public class Resolution
         {
-            public Node node { get; private set; }
+            public weak Node node { get; private set; }
             public SourceFileManager.SourceFile file { get; private set; }
 
             public Resolution( Node node, SourceFileManager.SourceFile file )
@@ -151,7 +155,11 @@ namespace SourceStructure
 
         internal void drop_child( Node child )
         {
-            resolution = null;
+            if( resolution != null )
+            {
+                resolution.node.weak_unref( reset );
+                resolution = null;
+            }
         }
 
         public FileReferenceNode( SourceFileView parent_view, string path, SourceAnalyzer.FileReferenceType path_type )
@@ -160,9 +168,10 @@ namespace SourceStructure
             this.path = path;
             this.path_type = path_type;
 
-            editor.file_saved .connect( handle_file_saved  );
-            editor.file_opened.connect( handle_file_opened );
-            editor.file_closed.connect( handle_file_closed );
+            weak FileReferenceNode weak_this = this;
+
+            editor.file_saved .connect( weak_this.handle_file_saved  );
+            editor.file_opened.connect( weak_this.handle_file_opened );
         }
 
         /**
@@ -196,34 +205,12 @@ namespace SourceStructure
             resolve_through_file( file );
         }
 
-        /**
-         * Resets this reference if the referenced file was closed.
-         */
-        private void handle_file_closed( SourceFileManager.SourceFile file )
-        {
-            if( resolution != null && file == resolution.file ) reset();
-        }
-
-        /**
-         * Disconnects signal handlers from the `editor`.
-         *
-         * This must be done explicitly to cut the references those signals have
-         * on this node, before this node will be allowed to finalize itself.
-         */
-        public void destroy()
-        {
-            editor.file_saved .disconnect( handle_file_saved  );
-            editor.file_opened.disconnect( handle_file_opened );
-            editor.file_closed.disconnect( handle_file_closed );
-        }
-
         public void reset()
         {
             if( path_type != SourceAnalyzer.FileReferenceType.ABSOLUTE ) _abs_path = null;
             if( is_resolved )
             {
                 resolution.node.remove_from_parent( this );
-                resolution = null;
             }
         }
 
@@ -244,9 +231,11 @@ namespace SourceStructure
                     {
                         if( Utils.same_files( path, file.path ) )
                         {
+                            weak FileReferenceNode weak_this = this;
                             var view = editor.get_source_view( file );
-                            this.resolution = new Resolution( view.structure, file );
-                            this.resolution.node.add_parent( this );
+                            resolution = new Resolution( view.structure, file );
+                            resolution.node.add_parent( this );
+                            resolution.node.weak_ref( weak_this.reset );
                         }
                     }
                     catch( Error err )
@@ -262,7 +251,7 @@ namespace SourceStructure
             return true;
         }
 
-        bool is_resolved { public get { return resolution != null; } }
+        bool is_resolved { public get { assert( resolution == null || resolution.node != null ); return resolution != null; } }
 
         public void resolve()
         {

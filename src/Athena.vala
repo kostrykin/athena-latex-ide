@@ -22,7 +22,6 @@ public class Athena : Granite.Application
         about_license_type = Gtk.License.GPL_2_0;
     }
 
- 
     public override void activate()
     {
         var css    = new Gtk.CssProvider();
@@ -35,11 +34,12 @@ public class Athena : Granite.Application
         window.show_all();
     }
 
-        
     public static int main( string[] args )
     {
         new Athena().run( args );
         Gtk.main();
+stdout.printf( "MainWindow leaked? %s\n", MainWindow.instance.@get() == null ? "no" : "yes" ); // probably the reason for leaking the window is that some of its widgets are leaked
+stdout.printf( "Editor leaked? %s\n", Editor.instance.@get() == null ? "no" : "yes" );
         return 0;
     }
 

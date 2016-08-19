@@ -49,8 +49,11 @@ public class MainWindow : Gtk.Window
     private static const int DEFAULT_WIDTH  = 1300;
     private static const int DEFAULT_HEIGHT =  600;
 
+    public static WeakRef instance; // TODO: remove me
     public MainWindow( Athena app )
     {
+        instance = WeakRef( this ); // TODO: remove me
+
         this.title = app.program_name;
         this.set_default_size( DEFAULT_WIDTH, DEFAULT_HEIGHT );
         this.window_position = Gtk.WindowPosition.CENTER;
@@ -71,21 +74,14 @@ public class MainWindow : Gtk.Window
         this.add( stack );
         this.add_accel_group( hotkeys );
 
-        weak MainWindow weak_this = this;
-        preview.source_requested.connect( weak_this.handle_preview_source_requested );
+        preview.source_requested.connect( ( file_path, line ) =>
+            {
+                editor.open_file_from( file_path );
+                editor.current_file_line = line;
+            }
+        );
 
         set_buildable( BUILD_LOCKED_BY_EDITOR, !editor.is_buildable() );
-    }
-
-    ~MainWindow()
-    {
-        preview.source_requested.disconnect( this.handle_preview_source_requested );
-    }
-
-    private void handle_preview_source_requested( string file_path, int line )
-    {
-        editor.open_file_from( file_path );
-        editor.current_file_line = line;
     }
 
     private void setup_build_types()
@@ -97,6 +93,12 @@ public class MainWindow : Gtk.Window
                 build_types.set( itr, 0, build_type_name );
             }
         );
+    }
+
+    public override void destroy()
+    {
+        this.hotkeys = null;
+        base.destroy();
     }
 
     private delegate void HotkeyHandler( string hotkey );
