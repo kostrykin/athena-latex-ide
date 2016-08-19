@@ -125,8 +125,16 @@ public class SourceFileView : Gtk.ScrolledWindow
         }
     }
 
+    #if DEBUG
+    public static uint _debug_instance_counter = 0;
+    #endif
+
     public SourceFileView( Editor editor, SourceFileManager.SourceFile file )
     {
+        #if DEBUG
+        ++_debug_instance_counter;
+        #endif
+
         this.editor = editor;
         this.file = file;
 
@@ -148,6 +156,13 @@ public class SourceFileView : Gtk.ScrolledWindow
 
         this.add( view );
         this.grab_focus.connect_after( () => { view.grab_focus(); } );
+    }
+
+    ~SourceFileView()
+    {
+        #if DEBUG
+        --_debug_instance_counter;
+        #endif
     }
 
     public override void destroy()

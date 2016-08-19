@@ -49,10 +49,15 @@ public class MainWindow : Gtk.Window
     private static const int DEFAULT_WIDTH  = 1300;
     private static const int DEFAULT_HEIGHT =  600;
 
-    public static WeakRef instance; // TODO: remove me
+    #if DEBUG
+    public static uint _debug_instance_counter = 0;
+    #endif
+
     public MainWindow( Athena app )
     {
-        instance = WeakRef( this ); // TODO: remove me
+        #if DEBUG
+        ++_debug_instance_counter;
+        #endif
 
         this.title = app.program_name;
         this.set_default_size( DEFAULT_WIDTH, DEFAULT_HEIGHT );
@@ -82,6 +87,13 @@ public class MainWindow : Gtk.Window
         );
 
         set_buildable( BUILD_LOCKED_BY_EDITOR, !editor.is_buildable() );
+    }
+
+    ~MainWindow()
+    {
+        #if DEBUG
+        --_debug_instance_counter;
+        #endif
     }
 
     private void setup_build_types()

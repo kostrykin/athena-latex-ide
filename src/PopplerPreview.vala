@@ -25,7 +25,7 @@ public class PopplerPreview : PdfPreview
 
     public PopplerPreview()
     {
-        Object( orientation: Gtk.Orientation.VERTICAL, spacing: 0 );
+        base( Gtk.Orientation.VERTICAL, 0 );
         choreographer = new PopplerChoreographer( display );
 
         grid.attach( display, 0, 0, 1, 1 );

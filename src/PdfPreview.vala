@@ -10,6 +10,25 @@ public abstract class PdfPreview : Gtk.Box
 
     private Synctex.Lib.Scanner scanner;
 
+    #if DEBUG
+    public static uint _debug_instance_counter = 0;
+    #endif
+
+    public PdfPreview( Gtk.Orientation orientation, int spacing )
+    {
+        Object( orientation: Gtk.Orientation.VERTICAL, spacing: 0 );
+    #if DEBUG
+        ++_debug_instance_counter;
+    #endif
+    }
+
+    #if DEBUG
+    ~PdfPreview()
+    {
+        --_debug_instance_counter;
+    }
+    #endif
+
     public void reset_synctex()
         ensures( scanner == null )
     {

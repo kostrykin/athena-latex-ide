@@ -9,6 +9,20 @@ namespace SourceStructure
         private Gee.Set< weak InnerNode > parents = new Gee.HashSet< InnerNode* >();
         public Gee.Map< Feature, string > features { get; private set; default = new Gee.HashMap< Feature, string >(); }
 
+        #if DEBUG
+        public static uint _debug_instance_counter = 0;
+
+        public Node()
+        {
+            ++_debug_instance_counter;
+        }
+
+        ~Node()
+        {
+            --_debug_instance_counter;
+        }
+        #endif
+
         public static Gee.Set< Node > empty_visited_nodes_set()
         {
             return new Gee.HashSet< Node >();

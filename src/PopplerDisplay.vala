@@ -109,8 +109,16 @@ public class PopplerDisplay : Gtk.DrawingArea
     public AnimationControl animations { public get; private set; default = new AnimationControl( 25 ); }
     private Gee.List< Drawables.Shape > drawables = new Gee.LinkedList< Drawables.Shape >();
 
+    #if DEBUG
+    public static uint _debug_instance_counter = 0;
+    #endif
+
     public PopplerDisplay()
     {
+        #if DEBUG
+        ++_debug_instance_counter;
+        #endif
+
         v_adjustment.value_changed.connect( update_viewport );
         h_adjustment.value_changed.connect(      queue_draw );
 
@@ -154,6 +162,13 @@ public class PopplerDisplay : Gtk.DrawingArea
                 return true;
             }
         );
+    }
+
+    ~PopplerDisplay()
+    {
+        #if DEBUG
+        --_debug_instance_counter;
+        #endif
     }
 
     public void move_view( double pixels_dx, double pixels_dy )

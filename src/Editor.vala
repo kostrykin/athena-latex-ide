@@ -43,11 +43,17 @@ public class Editor : Gtk.Box
 
     private bool handle_files_view_changes = true;
 
-    public static WeakRef instance; // TODO: remove me
+    #if DEBUG
+    public static uint _debug_instance_counter = 0;
+    #endif
+
     public Editor()
     {
+        #if DEBUG
+        ++_debug_instance_counter;
+        #endif
+
         Object( orientation: Gtk.Orientation.VERTICAL, spacing: 0 );
-        instance = WeakRef( this ); // TODO: remove me
         this.setup_infobars();
         this.pack_start( conflict_info_bar, false );
         this.setup_toolbar();
@@ -56,6 +62,13 @@ public class Editor : Gtk.Box
         this.stack.show();
 
         this.session.files.invalidated.connect( update_files_model );
+    }
+
+    ~Editor()
+    {
+        #if DEBUG
+        --_debug_instance_counter;
+        #endif
     }
 
     public override void destroy()

@@ -102,7 +102,7 @@ find_package(Vala REQUIRED)
 ##
 
 macro(vala_precompile output)
-    parse_arguments(ARGS "PACKAGES;OPTIONS;DIRECTORY;GENERATE_HEADER;GENERATE_VAPI;CUSTOM_VAPIS" "" ${ARGN})
+    parse_arguments(ARGS "PACKAGES;OPTIONS;DEFINITIONS;DIRECTORY;GENERATE_HEADER;GENERATE_VAPI;CUSTOM_VAPIS" "" ${ARGN})
     if(ARGS_DIRECTORY)
         set(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${ARGS_DIRECTORY})
     else(ARGS_DIRECTORY)
@@ -113,6 +113,10 @@ macro(vala_precompile output)
     foreach(pkg ${ARGS_PACKAGES})
         list(APPEND vala_pkg_opts "--pkg=${pkg}")
     endforeach(pkg ${ARGS_PACKAGES})
+    set(preprop_definitions "")
+    foreach(preprop ${ARGS_DEFINITIONS})
+        list(APPEND preprop_definitions "--define=${preprop}")
+    endforeach(preprop ${ARGS_DEFINITIONS})
     set(in_files "")
     set(out_files "")
     set(${output} "")
@@ -165,6 +169,7 @@ macro(vala_precompile output)
         "-b" ${CMAKE_CURRENT_SOURCE_DIR} 
         "-d" ${DIRECTORY} 
         ${vala_pkg_opts} 
+        ${preprop_definitions} 
         ${ARGS_OPTIONS} 
         ${in_files} 
         ${custom_vapi_arguments}

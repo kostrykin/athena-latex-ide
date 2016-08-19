@@ -19,8 +19,18 @@ foreach(VALA_SRC_FILE_ABS ${VALA_SRC_ABS})
     list(APPEND VALA_SRC "${VALA_SRC_FILE}")
 endforeach(VALA_SRC_FILE_ABS)
 
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(DEBUG "DEBUG")
+endif()
+
 add_definitions(${CFLAGS} -Wno-deprecated-declarations)
-vala_precompile(VALA_C ${VALA_SRC} PACKAGES gtk+-3.0 gtksourceview-3.0 granite poppler-glib OPTIONS --thread --target-glib=2.32)
+
+vala_precompile(
+    VALA_C ${VALA_SRC}
+    PACKAGES gtk+-3.0 gtksourceview-3.0 granite poppler-glib
+    OPTIONS --thread --target-glib=2.32
+    DEFINITIONS DEBUG
+    )
 
 file(GLOB SYNCTEX_SRC_ABS ../lib/synctex/*.c)
 include_directories(../lib/synctex)

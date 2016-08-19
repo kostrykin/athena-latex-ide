@@ -55,8 +55,16 @@ public class PopplerRenderer
     public signal void finished();
     public signal void page_rendered( int page_idx );
 
+    #if DEBUG
+    public static uint _debug_instance_counter = 0;
+    #endif
+
     public PopplerRenderer( Poppler.Document document )
     {
+        #if DEBUG
+        ++_debug_instance_counter;
+        #endif
+
         this.document = document;
         this.finished_pages  = new bool[ document.get_n_pages() ];
         this.page_renderings = new Result[ this.finished_pages.length ];
@@ -65,6 +73,13 @@ public class PopplerRenderer
             this.page_renderings[ i ] = Result();
         }
         invalidate();
+    }
+
+    ~PopplerRenderer()
+    {
+        #if DEBUG
+        --_debug_instance_counter;
+        #endif
     }
 
     public void fetch_result( int page_idx, ref Result result )

@@ -26,7 +26,7 @@ public class Athena : Granite.Application
     {
         var css    = new Gtk.CssProvider();
         var screen = Gdk.Screen.get_default();
-        css.load_from_path( "athena.css" ); // TODO: catch `GLib.Error`
+        css.load_from_path( "athena.css" );
         Gtk.StyleContext.add_provider_for_screen( screen, css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION );
 
         var window = new MainWindow( this );
@@ -34,12 +34,37 @@ public class Athena : Granite.Application
         window.show_all();
     }
 
+    #if DEBUG
+    private static bool check_leak( string tag, uint counter )
+    {
+        if( counter != 0 )
+        {
+            warning( "!!! %s leaked -- %u time(s)", tag, counter );
+            return false;
+        }
+        else return true;
+    }
+    #endif
+
     public static int main( string[] args )
     {
         new Athena().run( args );
         Gtk.main();
-stdout.printf( "MainWindow leaked? %s\n", MainWindow.instance.@get() == null ? "no" : "yes" ); // probably the reason for leaking the window is that some of its widgets are leaked
-stdout.printf( "Editor leaked? %s\n", Editor.instance.@get() == null ? "no" : "yes" );
+
+        #if DEBUG
+        bool no_leaks = true;
+
+        no_leaks = check_leak(           "MainWindow",           MainWindow._debug_instance_counter ) && no_leaks;
+        no_leaks = check_leak(               "Editor",               Editor._debug_instance_counter ) && no_leaks;
+        no_leaks = check_leak( "SourceStructure.Node", SourceStructure.Node._debug_instance_counter ) && no_leaks;
+        no_leaks = check_leak(       "SourceFileView",       SourceFileView._debug_instance_counter ) && no_leaks;
+        no_leaks = check_leak(       "PopplerDisplay",       PopplerDisplay._debug_instance_counter ) && no_leaks;
+        no_leaks = check_leak(      "PopplerRenderer",      PopplerRenderer._debug_instance_counter ) && no_leaks;
+        no_leaks = check_leak(           "PdfPreview",           PdfPreview._debug_instance_counter ) && no_leaks;
+
+        if( no_leaks ) stdout.printf( "+ no memory leaks detected +\n" );
+        #endif
+
         return 0;
     }
 
