@@ -124,7 +124,7 @@ namespace SourceStructure
 
     public class FileReferenceNode : Node, InnerNode, Utils.Destroyable
     {
-        private SourceView parent_view;
+        private SourceFileView parent_view;
         private string path;
         private SourceAnalyzer.FileReferenceType path_type;
         private Editor editor { get { return parent_view.editor; } }
@@ -154,7 +154,7 @@ namespace SourceStructure
             resolution = null;
         }
 
-        public FileReferenceNode( SourceView parent_view, string path, SourceAnalyzer.FileReferenceType path_type )
+        public FileReferenceNode( SourceFileView parent_view, string path, SourceAnalyzer.FileReferenceType path_type )
         {
             this.parent_view = parent_view;
             this.path = path;

@@ -1,4 +1,4 @@
-public class SourceView : Gtk.ScrolledWindow // TODO: rename to SourceFileView
+public class SourceFileView : Gtk.ScrolledWindow
 {
 
     static construct
@@ -59,10 +59,10 @@ public class SourceView : Gtk.ScrolledWindow // TODO: rename to SourceFileView
     private class Partition : SourcePartitioning.Partition
     {
         private SourceStructure.SimpleNode partition_root = new SourceStructure.SimpleNode();
-        private SourceView view;
+        private SourceFileView view;
         private Gee.List< Utils.Destroyable > destroyables = new Gee.LinkedList< Utils.Destroyable >();
 
-        internal Partition( SourceView view )
+        internal Partition( SourceFileView view )
         {
             this.view = view;
             view.structure.add_child( partition_root );
@@ -132,7 +132,7 @@ public class SourceView : Gtk.ScrolledWindow // TODO: rename to SourceFileView
         }
     }
 
-    public SourceView( Editor editor, SourceFileManager.SourceFile file )
+    public SourceFileView( Editor editor, SourceFileManager.SourceFile file )
     {
         this.editor = editor;
         this.file = file;

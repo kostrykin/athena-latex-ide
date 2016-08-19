@@ -30,7 +30,7 @@ public class Editor : Gtk.Box
     private Gtk.InfoBar conflict_info_bar = new Gtk.InfoBar();
     private Gtk.InfoBar conflict_tool_bar = new Gtk.InfoBar();
 
-    private Gee.Map< SourceFileManager.SourceFile, SourceView > source_views = new Gee.HashMap< SourceFileManager.SourceFile, SourceView >();
+    private Gee.Map< SourceFileManager.SourceFile, SourceFileView > source_views = new Gee.HashMap< SourceFileManager.SourceFile, SourceFileView >();
 
     public Session session { private set; public get; default = new Session(); }
     public SourceFileManager.SourceFile? current_file { private set; public get; }
@@ -325,7 +325,7 @@ public class Editor : Gtk.Box
 
     private void add_source_view( SourceFileManager.SourceFile file )
     {
-        var source_view = new SourceView( this, file );
+        var source_view = new SourceFileView( this, file );
         source_view.buffer.text = file.get_contents();
         source_view.buffer.changed.connect( () =>
             {
@@ -576,13 +576,13 @@ public class Editor : Gtk.Box
         return build_input != null;
     }
 
-    public SourceView get_source_view( SourceFileManager.SourceFile file )
+    public SourceFileView get_source_view( SourceFileManager.SourceFile file )
         requires( (bool)( file in source_views.keys ) )
     {
         return source_views[ file ];
     }
 
-    public Gee.Collection< SourceView > get_source_views()
+    public Gee.Collection< SourceFileView > get_source_views()
     {
         return source_views.values;
     }
