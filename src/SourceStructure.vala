@@ -139,9 +139,9 @@ namespace SourceStructure
         public class Resolution
         {
             public Node node { get; private set; }
-            public FileManager.File file { get; private set; }
+            public SourceFileManager.SourceFile file { get; private set; }
 
-            public Resolution( Node node, FileManager.File file )
+            public Resolution( Node node, SourceFileManager.SourceFile file )
             {
                 this.node = node;
                 this.file = file;
@@ -173,7 +173,7 @@ namespace SourceStructure
          * For the same reason, if the parent file is saved and the reference
          * path type isn't absolute, the reference needs to be re-evaluated.
          */
-        private void handle_file_saved( FileManager.File file )
+        private void handle_file_saved( SourceFileManager.SourceFile file )
         {
             if( file != parent_view.file )
             {
@@ -191,7 +191,7 @@ namespace SourceStructure
          * try to resolve this reference through that file,
          * unless it's already resolved.
          */
-        private void handle_file_opened( FileManager.File file )
+        private void handle_file_opened( SourceFileManager.SourceFile file )
         {
             resolve_through_file( file );
         }
@@ -199,7 +199,7 @@ namespace SourceStructure
         /**
          * Resets this reference if the referenced file was closed.
          */
-        private void handle_file_closed( FileManager.File file )
+        private void handle_file_closed( SourceFileManager.SourceFile file )
         {
             if( resolution != null && file == resolution.file ) reset();
         }
@@ -233,7 +233,7 @@ namespace SourceStructure
          * Returns `false` only if this attempt fails *and*
          * the referenced file appears not to exist yet.
          */
-        private bool resolve_through_file( FileManager.File file )
+        private bool resolve_through_file( SourceFileManager.SourceFile file )
         {
             if( !is_resolved && file.path != null && file != parent_view.file )
             {

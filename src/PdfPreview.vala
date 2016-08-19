@@ -101,7 +101,6 @@ public abstract class PdfPreview : Gtk.Box
     public bool show_source_from_point( int page, double x, double y )
         requires( scanner != null )
     {
-        stdout.printf( "x: %g; y: %g\n", x, y );
         /* SyncTeX counts pages starting from 1 on.
          */
         if( scanner.edit_query( page + 1, (float) x, (float) y ) > 0 )

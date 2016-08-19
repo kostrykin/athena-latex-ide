@@ -30,14 +30,14 @@ public class Editor : Gtk.Box
     private Gtk.InfoBar conflict_info_bar = new Gtk.InfoBar();
     private Gtk.InfoBar conflict_tool_bar = new Gtk.InfoBar();
 
-    private Gee.Map< FileManager.File, SourceView > source_views = new Gee.HashMap< FileManager.File, SourceView >();
+    private Gee.Map< SourceFileManager.SourceFile, SourceView > source_views = new Gee.HashMap< SourceFileManager.SourceFile, SourceView >();
 
     public Session session { private set; public get; default = new Session(); }
-    public FileManager.File? current_file { private set; public get; }
+    public SourceFileManager.SourceFile? current_file { private set; public get; }
 
-    public signal void file_opened( FileManager.File file );
-    public signal void file_closed( FileManager.File file );
-    public signal void file_saved ( FileManager.File file );
+    public signal void file_opened( SourceFileManager.SourceFile file );
+    public signal void file_closed( SourceFileManager.SourceFile file );
+    public signal void file_saved ( SourceFileManager.SourceFile file );
     public signal void current_file_changed();
     public signal void buildable_invalidated();
 
@@ -117,7 +117,7 @@ public class Editor : Gtk.Box
         }
     }
 
-    private void denote_conflict( FileManager.File file )
+    private void denote_conflict( SourceFileManager.SourceFile file )
     {
         session.files.set_flags( file.position, Session.FLAGS_MODIFIED );
         session.files.set_flags( file.position, Session.FLAGS_CONFLICT );
@@ -133,7 +133,7 @@ public class Editor : Gtk.Box
         conflict_info_bar.show();
     }
 
-    private void resolve_conflict( FileManager.File? file )
+    private void resolve_conflict( SourceFileManager.SourceFile? file )
     {
         if( file != null )
         {
@@ -263,7 +263,7 @@ public class Editor : Gtk.Box
         FileDialog.choose_readable_file_and( ( path ) => { open_file_from( path ); } );
     }
 
-    public FileManager.File open_file_from( string? path ) // FIXME: what happens if `path` can't be opened?
+    public SourceFileManager.SourceFile open_file_from( string? path ) // FIXME: what happens if `path` can't be opened?
     {
         var position = path != null ? session.files.find_position( path ) : -1;
         if( position < 0 )
@@ -323,7 +323,7 @@ public class Editor : Gtk.Box
         buildable_invalidated();
     }
 
-    private void add_source_view( FileManager.File file )
+    private void add_source_view( SourceFileManager.SourceFile file )
     {
         var source_view = new SourceView( this, file );
         source_view.buffer.text = file.get_contents();
@@ -359,7 +359,7 @@ public class Editor : Gtk.Box
         source_view.show_all();
     }
 
-    private void remove_source_view( FileManager.File file )
+    private void remove_source_view( SourceFileManager.SourceFile file )
     {
         var source_view = source_views[ file ];
         stack.remove( source_view );
@@ -435,7 +435,7 @@ public class Editor : Gtk.Box
         }
     }
 
-    public FileManager.File get_file_at( int position )
+    public SourceFileManager.SourceFile get_file_at( int position )
     {
         return session.files[ position ];
     }
@@ -535,7 +535,7 @@ public class Editor : Gtk.Box
      * References the master file, or the current file otherwise, if
      * it's been saved at some prior time. Otherwise, `null` is returned.
      */
-    public FileManager.File? build_input
+    public SourceFileManager.SourceFile? build_input
     {
         get
         {
@@ -576,7 +576,7 @@ public class Editor : Gtk.Box
         return build_input != null;
     }
 
-    public SourceView get_source_view( FileManager.File file )
+    public SourceView get_source_view( SourceFileManager.SourceFile file )
         requires( (bool)( file in source_views.keys ) )
     {
         return source_views[ file ];

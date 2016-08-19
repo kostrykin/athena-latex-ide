@@ -1,16 +1,16 @@
-public class FileManager
+public class SourceFileManager
 {
 
     private static uint NEXT_NEW_FILE_INDEX = 1;
 
     private static uint BYTE_CODE_LF = 0x0A;
 
-    public class File
+    public class SourceFile
     {
         private string? _path;
         private string? _contents;
-        private GLib.File? file;
-        private GLib.FileMonitor? monitor;
+        private File? file;
+        private FileMonitor? monitor;
 
         public int    position { public get; internal set; }
         public uint   flags    { public get; internal set; }
@@ -20,7 +20,7 @@ public class FileManager
         /**
          * Indicates, that `file` was changed by this or another program.
          */
-        public signal void changed( File file );
+        public signal void changed( SourceFile file );
 
         public string? path
         {
@@ -40,9 +40,9 @@ public class FileManager
                 }
                 else
                 {
-                    this.label   = GLib.Path.get_basename( this.path );
-                    this.file    = GLib.File.new_for_path( this.path );
-                    this.monitor = this.file.monitor( GLib.FileMonitorFlags.NONE, null );
+                    this.label   = Path.get_basename( this.path );
+                    this.file    = File.new_for_path( this.path );
+                    this.monitor = this.file.monitor( FileMonitorFlags.NONE, null );
                     if( _contents != null )
                     {
                         this.set_contents( _contents );
@@ -104,7 +104,7 @@ public class FileManager
                     owned_contents = contents + "\n";
                     encoded_contents = owned_contents;
                 }
-                file.replace_contents( encoded_contents.data, null, false, GLib.FileCreateFlags.NONE, null, null );
+                file.replace_contents( encoded_contents.data, null, false, FileCreateFlags.NONE, null, null );
             }
         }
 
@@ -113,36 +113,43 @@ public class FileManager
             return ( this.flags & flags ) != 0;
         }
 
-        internal File( string? path, int position, uint flags )
+        internal SourceFile( string? path, int position, uint flags )
         {
             this.path     = path;
             this.position = position;
             this.flags    = flags;
         }
 
-        internal void start_monitor( FileManager manager )
+        ~SourceFile()
+        {
+            stop_monitor();
+        }
+
+        internal void start_monitor( SourceFileManager manager )
         {
             if( this.monitor != null )
             {
-                this.monitor.changed.connect( ( file, other_file, event_type ) =>
-                    {
-                        changed( this );
-                    }
-                );
+                this.monitor.changed.connect( handle_monitor_changed );
             }
+        }
+
+        private void handle_monitor_changed( File file, File? other_file, FileMonitorEvent event_type )
+        {
+            changed( this );
         }
 
         internal void stop_monitor()
         {
             if( this.monitor != null )
             {
+                this.monitor.changed.disconnect( handle_monitor_changed );
                 this.monitor.cancel();
                 this.monitor = null;
             }
         }
     }
 
-    private Gee.LinkedList< File > files = new Gee.LinkedList< File >();
+    private Gee.LinkedList< SourceFile > files = new Gee.LinkedList< SourceFile >();
     private int named_files = 0;
 
     public uint     new_file_flags { get; set; default = 0; }
@@ -212,7 +219,7 @@ public class FileManager
         }
     }
 
-    public File open( string? path )
+    public SourceFile open( string? path )
     {
         int position = get_insert_position( path );
 
@@ -237,12 +244,12 @@ public class FileManager
         invalidate( position, files.size - position + 1 );
     }
 
-    private File open_ex( string? path, int position )
+    private SourceFile open_ex( string? path, int position )
         requires( position >= 0 )
         requires( position <= files.size )
     {
         var flags = path == null ? new_file_flags : default_file_flags;
-        var file  = new File( path, position, flags );
+        var file  = new SourceFile( path, position, flags );
         insert_file( file );
         invalidate( position, files.size - position );
         return file;
@@ -254,7 +261,7 @@ public class FileManager
      * This is an atomic, most low-level operation.
      * The `position` of the `file` is allowed to be *right after* the last element.
      */
-    private void insert_file( File file )
+    private void insert_file( SourceFile file )
         requires( file.position >= 0 )
         requires( file.position <= files.size )
     {
@@ -275,7 +282,7 @@ public class FileManager
      *
      * This is an atomic, most low-level operation.
      */
-    private void remove_file( File file )
+    private void remove_file( SourceFile file )
         requires( file.position >= 0 )
         requires( file.position < files.size )
     {
@@ -295,7 +302,7 @@ public class FileManager
         }
     }
 
-    public File get( int position )
+    public SourceFile get( int position )
         requires( position >= 0 )
         requires( position < files.size )
     {
@@ -317,7 +324,7 @@ public class FileManager
         invalidate( position, 1 );
     }
 
-    public File set_path( int position, string? path )
+    public SourceFile set_path( int position, string? path )
         requires( position >= 0 )
         requires( position < files.size )
     {
@@ -349,7 +356,7 @@ public class FileManager
         }
     }
 
-    public Gee.Iterator< File > iterator()
+    public Gee.Iterator< SourceFile > iterator()
     {
         return files.iterator();
     }

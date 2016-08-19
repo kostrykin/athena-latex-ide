@@ -71,14 +71,21 @@ public class MainWindow : Gtk.Window
         this.add( stack );
         this.add_accel_group( hotkeys );
 
-        preview.source_requested.connect( ( file_path, line ) =>
-            {
-                editor.open_file_from( file_path );
-                editor.current_file_line = line;
-            }
-        );
+        weak MainWindow weak_this = this;
+        preview.source_requested.connect( weak_this.handle_preview_source_requested );
 
         set_buildable( BUILD_LOCKED_BY_EDITOR, !editor.is_buildable() );
+    }
+
+    ~MainWindow()
+    {
+        preview.source_requested.disconnect( this.handle_preview_source_requested );
+    }
+
+    private void handle_preview_source_requested( string file_path, int line )
+    {
+        editor.open_file_from( file_path );
+        editor.current_file_line = line;
     }
 
     private void setup_build_types()

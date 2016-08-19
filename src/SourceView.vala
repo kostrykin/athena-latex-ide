@@ -1,4 +1,4 @@
-public class SourceView : Gtk.ScrolledWindow
+public class SourceView : Gtk.ScrolledWindow // TODO: rename to SourceFileView
 {
 
     static construct
@@ -14,7 +14,7 @@ public class SourceView : Gtk.ScrolledWindow
     private static Gtk.SourceLanguage    LANGUAGE;
     private static Gtk.SourceStyleScheme STYLE_SCHEME;
 
-    public FileManager.File file { public get; private set; }
+    public SourceFileManager.SourceFile file { public get; private set; }
     public SourceStructure.SimpleNode structure { public get; private set; default = new SourceStructure.SimpleNode(); }
 
     public weak Editor editor { get; private set; }
@@ -132,7 +132,7 @@ public class SourceView : Gtk.ScrolledWindow
         }
     }
 
-    public SourceView( Editor editor, FileManager.File file )
+    public SourceView( Editor editor, SourceFileManager.SourceFile file )
     {
         this.editor = editor;
         this.file = file;
@@ -167,7 +167,7 @@ public class SourceView : Gtk.ScrolledWindow
         if( ( path_type == SourceAnalyzer.FileReferenceType.SUB_REFERENCE )
          || ( path_type == SourceAnalyzer.FileReferenceType.UNKNOWN && !Path.is_absolute( path ) ) )
         {
-            FileManager.File? parent = null;
+            SourceFileManager.SourceFile? parent = null;
             if( editor.build_input != null ) parent = editor.build_input;
             else
             {
@@ -175,7 +175,7 @@ public class SourceView : Gtk.ScrolledWindow
                 else parent = this.file;
             }
 
-            GLib.File root_dir = GLib.File.new_for_path( parent.path ).get_parent();
+            File root_dir = File.new_for_path( parent.path ).get_parent();
             var abs_path = root_dir.resolve_relative_path( path ).get_path();
             if( abs_path == null ) return null; // i.e. the path resolution failed
             return abs_path;

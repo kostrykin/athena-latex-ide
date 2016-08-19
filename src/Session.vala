@@ -11,9 +11,9 @@ public class Session
      */
     public static uint FLAGS_CONFLICT = 1 << 1;
 
-    public FileManager files { public get; internal set; default = new FileManager(); }
+    public SourceFileManager files { public get; internal set; default = new SourceFileManager(); }
 
-    public FileManager.File? master { public get; public set; }
+    public SourceFileManager.SourceFile? master { public get; public set; }
 
     public string output_path;
 

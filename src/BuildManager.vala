@@ -65,7 +65,7 @@ public class BuildManager
         return Path.build_path( Path.DIR_SEPARATOR_S, build_dir, n > -1 ? basename[ 0 : n ] : basename );
     }
 
-    public CommandContext create_build_context( FileManager.File input )
+    public CommandContext create_build_context( SourceFileManager.SourceFile input )
         requires( !Path.get_basename( input.path ).has_prefix( "." ) ) // TODO: warn user that files starting with "." cannot be built
     {
         var  base_dir = Path.get_dirname( input.path );
