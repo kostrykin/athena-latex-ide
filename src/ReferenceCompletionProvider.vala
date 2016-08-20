@@ -3,6 +3,7 @@ public class ReferenceCompletionProvider: Object, Gtk.SourceCompletionProvider
 
     private weak Editor editor;
     private Regex acceptance_pattern;
+    private Gtk.TextIter label_input_start;
 
     public ReferenceCompletionProvider( Editor editor )
     {
@@ -25,7 +26,11 @@ public class ReferenceCompletionProvider: Object, Gtk.SourceCompletionProvider
         if( context.iter.backward_search( "\\ref{", 0, out c0, out c1, line_start ) )
         {
             var text = c1.get_text( context.iter );
-            return acceptance_pattern.match_all( text );
+            if( acceptance_pattern.match_all( text ) )
+            {
+                label_input_start = c1;
+                return true;
+            }
         }
         return false;
     }
@@ -34,11 +39,17 @@ public class ReferenceCompletionProvider: Object, Gtk.SourceCompletionProvider
     {
         var proposals = new List< Gtk.SourceCompletionItem >();
         assert( editor.structure != null );
+        var label_input = label_input_start.get_text( context.iter );
         editor.structure.search_feature( SourceStructure.Feature.LABEL, ( node ) =>
             {
                 var label = node.features[ SourceStructure.Feature.LABEL ];
-                proposals.append( new Gtk.SourceCompletionItem( label, label + "}", null, null ) ); // FIXME: only append `}` if it isn't already there
-                return true;                                               // FIXME: there might already be text after the `{` which we must not repeat
+                if( label.has_prefix( label_input ) )
+                {
+                    var text = label;
+                    if( context.iter.ends_line() || context.iter.get_char() != '}' ) text += "}";
+                    proposals.append( new Gtk.SourceCompletionItem( label, text, null, null ) );
+                }
+                return true;
             }
         );
         context.add_proposals( this, proposals, true );
