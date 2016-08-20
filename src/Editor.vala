@@ -43,6 +43,9 @@ public class Editor : Gtk.Box
 
     private bool handle_files_view_changes = true;
 
+    public FeatureCompletionProvider reference_completion_provider { public get; private set; }
+    public FeatureCompletionProvider bib_entry_completion_provider { public get; private set; }
+
     #if DEBUG
     public static uint _debug_instance_counter = 0;
     #endif
@@ -62,6 +65,9 @@ public class Editor : Gtk.Box
         this.stack.show();
 
         this.session.files.invalidated.connect( update_files_model );
+
+        this.reference_completion_provider = new FeatureCompletionProvider( this, SourceStructure.Feature.LABEL    , "ref" , "Labels"     );
+        this.bib_entry_completion_provider = new FeatureCompletionProvider( this, SourceStructure.Feature.BIB_ENTRY, "cite", "References" );
     }
 
     ~Editor()

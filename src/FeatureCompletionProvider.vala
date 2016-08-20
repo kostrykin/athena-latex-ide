@@ -1,19 +1,36 @@
-public class ReferenceCompletionProvider: Object, Gtk.SourceCompletionProvider
+public class FeatureCompletionProvider: Object, Gtk.SourceCompletionProvider
 {
 
-    private weak Editor editor;
-    private Regex acceptance_pattern;
+    private static Regex acceptance_pattern;
+    static construct
+    {
+        try
+        {
+            acceptance_pattern = new Regex( "[A-Za-z0-9_:]*$", RegexCompileFlags.ANCHORED | RegexCompileFlags.DOLLAR_ENDONLY );
+        }
+        catch( RegexError err )
+        {
+            critical( err.message );
+        }
+    }
+
+    public weak Editor editor { get; private set; }
     private Gtk.TextIter label_input_start;
 
-    public ReferenceCompletionProvider( Editor editor )
+    public string match_command;
+    public SourceStructure.Feature feature;
+    public string name;
+
+    public FeatureCompletionProvider( Editor editor, SourceStructure.Feature feature, string match_command, string name )
     {
         this.editor = editor;
-        this.acceptance_pattern = new Regex( "[A-Za-z0-9_:]*$", RegexCompileFlags.ANCHORED | RegexCompileFlags.DOLLAR_ENDONLY );
+        this.feature = feature;
+        this.match_command = match_command;
     }
 
     public virtual string get_name()
     {
-        return "Labels";
+        return name;
     }
 
     public virtual bool match( Gtk.SourceCompletionContext context )
@@ -23,7 +40,7 @@ public class ReferenceCompletionProvider: Object, Gtk.SourceCompletionProvider
         line_start.set_line_offset( 0 );
 
         Gtk.TextIter c0, c1;
-        if( context.iter.backward_search( "\\ref{", 0, out c0, out c1, line_start ) )
+        if( context.iter.backward_search( "\\%s{".printf( match_command ), 0, out c0, out c1, line_start ) )
         {
             var text = c1.get_text( context.iter );
             if( acceptance_pattern.match_all( text ) )
@@ -40,9 +57,9 @@ public class ReferenceCompletionProvider: Object, Gtk.SourceCompletionProvider
         var proposals = new List< Gtk.SourceCompletionItem >();
         assert( editor.structure != null );
         var label_input = label_input_start.get_text( context.iter );
-        editor.structure.search_feature( SourceStructure.Feature.LABEL, ( node ) =>
+        editor.structure.search_feature( feature, ( node ) =>
             {
-                var label = node.features[ SourceStructure.Feature.LABEL ];
+                var label = node.features[ feature ];
                 if( label.has_prefix( label_input ) )
                 {
                     var text = label;

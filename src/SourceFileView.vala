@@ -6,12 +6,14 @@ public class SourceFileView : Gtk.ScrolledWindow
         string font_name = new GLib.Settings( "org.gnome.desktop.interface" ).get_string( "monospace-font-name" );
         DEFAULT_FONT = Pango.FontDescription.from_string( font_name );
 
-        LANGUAGE     = Gtk.SourceLanguageManager.get_default().get_language( "latex" );
+        LANG_LATEX   = Gtk.SourceLanguageManager.get_default().get_language( "latex"  );
+        LANG_BIBTEX  = Gtk.SourceLanguageManager.get_default().get_language( "bibtex" );
         STYLE_SCHEME = Gtk.SourceStyleSchemeManager.get_default().get_scheme( "solarized-light" );
     }
 
     private static Pango.FontDescription DEFAULT_FONT;
-    private static Gtk.SourceLanguage    LANGUAGE;
+    private static Gtk.SourceLanguage    LANG_LATEX;
+    private static Gtk.SourceLanguage    LANG_BIBTEX;
     private static Gtk.SourceStyleScheme STYLE_SCHEME;
 
     public weak SourceFileManager.SourceFile file { public get; private set; }
@@ -20,13 +22,8 @@ public class SourceFileView : Gtk.ScrolledWindow
     public weak Editor editor { get; private set; }
     private Gtk.SourceView view;
 
-    public Gtk.TextBuffer buffer
-    {
-        get
-        {
-            return view.buffer;
-        }
-    }
+    public Gtk.SourceBuffer buffer { get; private set; }
+    //public Gtk.TextBuffer buffer { get { return view.buffer; } }
 
     public static string[] available_style_schemes
     {
@@ -109,9 +106,15 @@ public class SourceFileView : Gtk.ScrolledWindow
             var analyzer = SourceAnalyzer.instance;
             var text = get_text( view.buffer );
 
-            analyzer.find_labels         ( text, create_leafs( SourceStructure.Feature.LABEL     ) );
-            analyzer.find_bib_entries    ( text, create_leafs( SourceStructure.Feature.BIB_ENTRY ) );
-            analyzer.find_file_references( text, handle_file_reference );
+            if( view.mode == Mode.UNKNOWN || view.mode == Mode.BIBTEX )
+            {
+                analyzer.find_bib_entries( text, create_leafs( SourceStructure.Feature.BIB_ENTRY ) );
+            }
+            if( view.mode == Mode.UNKNOWN || view.mode == Mode.LATEX )
+            {
+                analyzer.find_labels         ( text, create_leafs( SourceStructure.Feature.LABEL ) );
+                analyzer.find_file_references( text, handle_file_reference );
+            }
         }
 
         public override void split( SourcePartitioning.Partition successor )
@@ -138,8 +141,9 @@ public class SourceFileView : Gtk.ScrolledWindow
         this.editor = editor;
         this.file = file;
 
-        var buffer = new Gtk.SourceBuffer.with_language( LANGUAGE );
+        buffer = new Gtk.SourceBuffer.with_language( LANG_LATEX );
         buffer.set_style_scheme( STYLE_SCHEME );
+        update_buffer_language();
 
         view = new Gtk.SourceView();
         view.buffer = buffer;
@@ -152,10 +156,14 @@ public class SourceFileView : Gtk.ScrolledWindow
         view.set_wrap_mode( Gtk.WrapMode.WORD_CHAR );
 
         partitioning = new SourcePartitioning( buffer, () => { return new Partition( this ); } );
-        view.get_completion().add_provider( new ReferenceCompletionProvider( editor ) );
+        view.get_completion().add_provider( editor.reference_completion_provider );
+        view.get_completion().add_provider( editor.bib_entry_completion_provider );
 
         this.add( view );
         this.grab_focus.connect_after( () => { view.grab_focus(); } );
+
+        weak SourceFileView weak_this = this;
+        editor.file_saved.connect( weak_this.handle_file_saved );
     }
 
     ~SourceFileView()
@@ -163,6 +171,15 @@ public class SourceFileView : Gtk.ScrolledWindow
         #if DEBUG
         --_debug_instance_counter;
         #endif
+    }
+
+    private void handle_file_saved( SourceFileManager.SourceFile file )
+    {
+        if( file == this.file )
+        {
+            partitioning.partition( SourcePartitioning.DEFAULT_LINES_PER_PARTITION, true );
+            update_buffer_language();
+        }
     }
 
     public override void destroy()
@@ -198,6 +215,51 @@ public class SourceFileView : Gtk.ScrolledWindow
         else
         {
             return path;
+        }
+    }
+
+    public enum Mode { UNKNOWN, LATEX, BIBTEX }
+
+    public Mode mode
+    {
+        get
+        {
+            if( file.path == null ) return Mode.UNKNOWN;
+            var file_path_lower = file.path.down();
+
+            if( file_path_lower.has_suffix( ".tex" ) )
+            {
+                return Mode.LATEX;
+            }
+            else
+            if( file_path_lower.has_suffix( ".bib" ) )
+            {
+                return Mode.BIBTEX;
+            }
+            else
+            {
+                return Mode.UNKNOWN;
+            }
+        }
+    }
+
+    private void update_buffer_language()
+    {
+        switch( mode )
+        {
+
+        case Mode.UNKNOWN:
+        case Mode.LATEX:
+            buffer.language = LANG_LATEX;
+            break;
+
+        case Mode.BIBTEX:
+            buffer.language = LANG_BIBTEX;
+            break;
+
+        default:
+            assert_not_reached();
+
         }
     }
 
