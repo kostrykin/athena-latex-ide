@@ -113,8 +113,16 @@ public class SourceFileManager
             return ( this.flags & flags ) != 0;
         }
 
+        #if DEBUG
+        public static uint _debug_instance_counter = 0;
+        #endif
+
         internal SourceFile( string? path, int position, uint flags )
         {
+            #if DEBUG
+            ++_debug_instance_counter;
+            #endif
+    
             this.path     = path;
             this.position = position;
             this.flags    = flags;
@@ -122,6 +130,10 @@ public class SourceFileManager
 
         ~SourceFile()
         {
+            #if DEBUG
+            --_debug_instance_counter;
+            #endif
+ 
             stop_monitor();
         }
 
@@ -359,5 +371,19 @@ public class SourceFileManager
     {
         return files.iterator();
     }
+
+    #if DEBUG
+    public static uint _debug_instance_counter = 0;
+
+    public SourceFileManager()
+    {
+        ++_debug_instance_counter;
+    }
+
+    ~SourceFileManager()
+    {
+        --_debug_instance_counter;
+    }
+    #endif
 
 }

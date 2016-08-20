@@ -352,49 +352,35 @@ public class Editor : Gtk.Box
 
     private void add_source_view( SourceFileManager.SourceFile file )
     {
+        weak Editor weak_this = this;
         var source_view = new SourceFileView( this, file );
         source_view.buffer.text = file.get_contents();
-        source_view.buffer.changed.connect( () =>
-            {
-                session.files.set_flags( file.position, Session.FLAGS_MODIFIED );
-            }
-        );
-        add_file_changed_handler( this, file );
+        file.changed.connect( weak_this.handle_file_changed );
         stack.add( source_view );
         source_views[ file ] = source_view;
         source_view.show_all();
     }
 
-    private static void add_file_changed_handler( Editor self, SourceFileManager.SourceFile file )
+    private void handle_file_changed( SourceFileManager.SourceFile file )
     {
-        /* There seems to be a `valac` bug here:
-         * The documentation states, that all function arguments are `weak` by default.
-         * Nevertheless, using the weak `self` directly inside of the closure causes a hard reference,
-         * while the usage of `weak_this` doesn't.
+        /* We need to decide, whether the change occured by one of our own save
+         * operations (i.e. we're still in sync) or whether the chang was done
+         * by somebody else.
+         *
+         * To do this, we first save the fingerprint of the data as we know it:
          */
-        weak Editor weak_this = self;
-        file.changed.connect( () =>
-            {
-                /* We need to decide, whether the change occured by one of our own save
-                 * operations (i.e. we're still in sync) or whether the chang was done
-                 * by somebody else.
-                 *
-                 * To do this, we first save the fingerprint of the data as we know it:
-                 */
-                var our_hash = file.hash;
+        var our_hash = file.hash;
 
-                /* Next, we re-read the file contents, so the fingerprint gets updated.
-                 */
-                file.get_contents();
+        /* Next, we re-read the file contents, so the fingerprint gets updated.
+         */
+        file.get_contents();
 
-                /* If the fingerprint changed, then we've lost sync.
-                 */
-                if( our_hash != file.hash )
-                {
-                    weak_this.denote_conflict( file );
-                }
-            }
-        );
+        /* If the fingerprint changed, then we've lost sync.
+         */
+        if( our_hash != file.hash )
+        {
+            denote_conflict( file );
+        }
     }
 
     private void remove_source_view( SourceFileManager.SourceFile file )

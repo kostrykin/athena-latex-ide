@@ -17,9 +17,24 @@ public class Session
 
     public string output_path;
 
+    #if DEBUG
+    public static uint _debug_instance_counter = 0;
+    #endif
+
     public Session()
     {
+        #if DEBUG
+        ++_debug_instance_counter;
+        #endif
+
         files.new_file_flags = FLAGS_MODIFIED;
     }
+
+    #if DEBUG
+    ~Session()
+    {
+        --_debug_instance_counter;
+    }
+    #endif
 
 }

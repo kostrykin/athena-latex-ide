@@ -54,15 +54,18 @@ public class Athena : Granite.Application
         #if DEBUG
         bool no_leaks = true;
 
-        no_leaks = check_leak(           "MainWindow",           MainWindow._debug_instance_counter ) && no_leaks;
-        no_leaks = check_leak(               "Editor",               Editor._debug_instance_counter ) && no_leaks;
-        no_leaks = check_leak( "SourceStructure.Node", SourceStructure.Node._debug_instance_counter ) && no_leaks;
-        no_leaks = check_leak(       "SourceFileView",       SourceFileView._debug_instance_counter ) && no_leaks;
-        no_leaks = check_leak(       "PopplerDisplay",       PopplerDisplay._debug_instance_counter ) && no_leaks;
-        no_leaks = check_leak(      "PopplerRenderer",      PopplerRenderer._debug_instance_counter ) && no_leaks;
-        no_leaks = check_leak(           "PdfPreview",           PdfPreview._debug_instance_counter ) && no_leaks;
+        no_leaks = check_leak(                   "MainWindow",                   MainWindow._debug_instance_counter ) && no_leaks;
+        no_leaks = check_leak(                       "Editor",                       Editor._debug_instance_counter ) && no_leaks;
+        no_leaks = check_leak(                      "Session",                      Session._debug_instance_counter ) && no_leaks;
+        no_leaks = check_leak(            "SourceFileManager",            SourceFileManager._debug_instance_counter ) && no_leaks;
+        no_leaks = check_leak( "SourceFileManager.SourceFile", SourceFileManager.SourceFile._debug_instance_counter ) && no_leaks;
+        no_leaks = check_leak(         "SourceStructure.Node",         SourceStructure.Node._debug_instance_counter ) && no_leaks;
+        no_leaks = check_leak(               "SourceFileView",               SourceFileView._debug_instance_counter ) && no_leaks;
+        no_leaks = check_leak(               "PopplerDisplay",               PopplerDisplay._debug_instance_counter ) && no_leaks;
+        no_leaks = check_leak(              "PopplerRenderer",              PopplerRenderer._debug_instance_counter ) && no_leaks;
+        no_leaks = check_leak(                   "PdfPreview",                   PdfPreview._debug_instance_counter ) && no_leaks;
 
-        if( no_leaks ) stdout.printf( "+ no memory leaks detected +\n" );
+        if( no_leaks ) info( "No memory leaks detected :)" );
         #endif
 
         return 0;

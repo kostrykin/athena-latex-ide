@@ -23,7 +23,6 @@ public class SourceFileView : Gtk.ScrolledWindow
     private Gtk.SourceView view;
 
     public Gtk.SourceBuffer buffer { get; private set; }
-    //public Gtk.TextBuffer buffer { get { return view.buffer; } }
 
     public static string[] available_style_schemes
     {
@@ -164,6 +163,17 @@ public class SourceFileView : Gtk.ScrolledWindow
 
         weak SourceFileView weak_this = this;
         editor.file_saved.connect( weak_this.handle_file_saved );
+
+        /* Wait for the control to return to the event loop before installing
+         * the buffer callbacks, to avoid flagging that file view as modified
+         * e.g. after something is loaded into the buffer.
+         */
+        Timeout.add( 0, () =>
+            {
+                buffer.changed.connect( weak_this.set_modified_flag );
+                return GLib.Source.REMOVE;
+            }
+        );
     }
 
     ~SourceFileView()
@@ -171,6 +181,11 @@ public class SourceFileView : Gtk.ScrolledWindow
         #if DEBUG
         --_debug_instance_counter;
         #endif
+    }
+
+    private void set_modified_flag()
+    {
+        editor.session.files.set_flags( file.position, Session.FLAGS_MODIFIED );
     }
 
     private void handle_file_saved( SourceFileManager.SourceFile file )
