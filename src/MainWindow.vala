@@ -4,7 +4,19 @@ using Granite.Widgets;
 public class MainWindow : Gtk.Window
 {
 
-    public static Gtk.IconSize TOOLBAR_ICON_SIZE = Gtk.IconSize.BUTTON;
+    public static Gtk.IconSize   TOOLBAR_ICON_SIZE = Gtk.IconSize.BUTTON;
+    public static Gtk.IconSize HEADERBAR_ICON_SIZE = Gtk.IconSize.LARGE_TOOLBAR;
+
+    private static Gtk.Image ICON_BUILD_IDLE;
+    private static Gtk.Image ICON_BUILD_SUCCESS;
+    private static Gtk.Image ICON_BUILD_FAILURE;
+
+    static construct
+    {
+        ICON_BUILD_IDLE    = new Gtk.Image.from_icon_name( "radio-symbolic"            , HEADERBAR_ICON_SIZE );
+        ICON_BUILD_SUCCESS = new Gtk.Image.from_icon_name( "process-completed-symbolic", HEADERBAR_ICON_SIZE );
+        ICON_BUILD_FAILURE = new Gtk.Image.from_icon_name( "process-error-symbolic"    , HEADERBAR_ICON_SIZE );
+    }
 
     public static const string HOTKEY_QUICK_BUILD = "F1";
     public static const string HOTKEY_FULL_BUILD  = "F2";
@@ -20,10 +32,12 @@ public class MainWindow : Gtk.Window
     private PdfPreview     preview    = new PopplerPreview();
     private Gtk.AccelGroup hotkeys    = new Gtk.AccelGroup();
     private OverlayBar     build_info;
+    private BuildLogView   build_log;
     private Gdk.Cursor     busy_cursor;
 
-    private Gtk.Button btn_quick_build = new Gtk.Button.with_label( "Quick Build" );
-    private Gtk.Button btn_full_build  = new Gtk.Button.with_label( "Full" );
+    private Gtk.ToolButton btn_build_log;
+    private Gtk.Button     btn_quick_build = new Gtk.Button.with_label( "Quick Build" );
+    private Gtk.Button     btn_full_build  = new Gtk.Button.with_label( "Full" );
 
     private BuildManager  builder     = new BuildManager();
     private Gtk.ListStore build_types = new Gtk.ListStore( 1, typeof( string ) );
@@ -47,8 +61,8 @@ public class MainWindow : Gtk.Window
     private static const uint8 BUILD_LOCKED_BY_EDITOR         = 1 << 0;
     private static const uint8 BUILD_LOCKED_BY_ONGOING_BUILD  = 1 << 1;
 
-    private static const int DEFAULT_WIDTH  = 1300;
-    private static const int DEFAULT_HEIGHT =  600;
+    public static const int DEFAULT_WIDTH  = 1300;
+    public static const int DEFAULT_HEIGHT =  600;
 
     #if DEBUG
     public static uint _debug_instance_counter = 0;
@@ -70,6 +84,10 @@ public class MainWindow : Gtk.Window
         this.setup_welcome_screen( app );
         this.setup_editor();
         this.setup_hotkeys();
+
+        this.build_log = new BuildLogView( btn_build_log );
+        this.build_log.name = "build-log";
+        this.build_log.cleared.connect( () => { btn_build_log.hide(); } );
 
         this.build_info = new Granite.Widgets.OverlayBar( overlay );
         this.build_info.set_no_show_all( true );
@@ -112,6 +130,7 @@ public class MainWindow : Gtk.Window
 
     public override void destroy()
     {
+        this.build_log = null;
         this.hotkeys = null;
         base.destroy();
     }
@@ -200,7 +219,20 @@ public class MainWindow : Gtk.Window
 
         headerbar.pack_end( build_types_view_toolitem );
 
+        btn_build_log = new Gtk.ToolButton( ICON_BUILD_IDLE, null );
+        btn_build_log.show_all();
+        btn_build_log.hide();
+        btn_build_log.set_no_show_all( true );
+        btn_build_log.clicked.connect( toggle_build_log );
+        headerbar.pack_end( new Gtk.SeparatorToolItem() );
+        headerbar.pack_end( btn_build_log );
+
         this.set_titlebar( headerbar );
+    }
+
+    public void toggle_build_log()
+    {
+        build_log.visible = !build_log.visible;
     }
 
     private void setup_welcome_screen( Athena app )
@@ -244,6 +276,7 @@ public class MainWindow : Gtk.Window
                 if( editor.files_count == 0 )
                 {
                     stack.set_visible_child_name( "welcome" );
+                    build_log.clear();
                 }
             }
         );
@@ -330,9 +363,13 @@ public class MainWindow : Gtk.Window
 
             editor.session.output_path = "%s.pdf".printf( context.variables[ BuildManager.VAR_OUTPUT ] );
 
+            build_log.clear();
+            set_build_result( null );
+
             current_build = new Build( commands.prepare_run( context, mode ) );
             current_build.batch.step.connect( update_build_info );
             current_build.batch.done.connect( ( build, result ) => { exit_build( mode, result == 0 ); } );
+            current_build.batch.stdout_changed.connect( append_build_log );
             current_build.batch.special_command.connect( handle_special_command );
             current_build.source_file_path = editor.current_file.path;
             current_build.source_file_line = editor.current_file_line;
@@ -341,6 +378,11 @@ public class MainWindow : Gtk.Window
             set_buildable( BUILD_LOCKED_BY_ONGOING_BUILD, true );
             get_window().set_cursor( busy_cursor );
         }
+    }
+
+    private void append_build_log( CommandSequence.Run build, string text )
+    {
+        build_log.add_step_output( build_log.current_position, text );
     }
 
     private void handle_special_command( CommandSequence.Run build, string command )
@@ -353,8 +395,7 @@ public class MainWindow : Gtk.Window
                 break;
 
             default:
-                // TODO: throw error
-                break;
+                assert_not_reached();
         }
     }
 
@@ -380,14 +421,32 @@ public class MainWindow : Gtk.Window
             var cmd = build.commands[ build.position ];
             build_info.status = "Build: %s (step %d of %d)".printf( cmd, build.position + 1, build.commands.length );
             build_info.show();
+            build_log.current_position = build_log.add_step( cmd );
+            build_log.set_step_result( build_log.current_position, true );
             message( @"build> $cmd" );
         }
     }
 
+    private void set_build_result( bool? success )
+    {
+        if( success != null )
+        {
+            btn_build_log.set_icon_widget( success ? ICON_BUILD_SUCCESS : ICON_BUILD_FAILURE );
+            build_log.set_step_result( build_log.current_position, success );
+        }
+        else btn_build_log.set_icon_widget( ICON_BUILD_IDLE );
+
+        btn_build_log.set_no_show_all( false );
+        btn_build_log.show_all();
+        btn_build_log.set_no_show_all( true );
+    }
+
     private void exit_build( string mode, bool success )
     {
-        // ...
         get_window().set_cursor( null );
+        set_build_result( success );
+        if( !success ) build_log.show();
+
         var timeout = new TimeoutSource( 1000 );
         timeout.set_callback( () =>
             {

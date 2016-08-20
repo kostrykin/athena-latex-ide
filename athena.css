@@ -1,5 +1,6 @@
 PopplerPreview > GtkToolbar,
-Editor > GtkToolbar {
+Editor > GtkToolbar,
+#build-log GtkToolbar {
   padding: 2px;
 }
 
@@ -19,5 +20,15 @@ PopplerPreview > GtkToolbar {
 #btn-quick-build {
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
+}
+
+#build-log-command-view {
+  font-weight: bold;
+  padding-left: 5px;
+}
+
+#build-log-icon > GtkImage {
+  padding-right: 2px;
+  padding-left: 3px;
 }
 
