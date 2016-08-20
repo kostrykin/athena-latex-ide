@@ -20,6 +20,7 @@ public class MainWindow : Gtk.Window
     private PdfPreview     preview    = new PopplerPreview();
     private Gtk.AccelGroup hotkeys    = new Gtk.AccelGroup();
     private OverlayBar     build_info;
+    private Gdk.Cursor     busy_cursor;
 
     private Gtk.Button btn_quick_build = new Gtk.Button.with_label( "Quick Build" );
     private Gtk.Button btn_full_build  = new Gtk.Button.with_label( "Full" );
@@ -72,6 +73,8 @@ public class MainWindow : Gtk.Window
 
         this.build_info = new Granite.Widgets.OverlayBar( overlay );
         this.build_info.set_no_show_all( true );
+
+        this.busy_cursor = new Gdk.Cursor( Gdk.CursorType.WATCH );
 
         pane.pack1( overlay,  true,  true );
         pane.pack2( preview, false, false );
@@ -336,6 +339,7 @@ public class MainWindow : Gtk.Window
             current_build.batch.start();
 
             set_buildable( BUILD_LOCKED_BY_ONGOING_BUILD, true );
+            get_window().set_cursor( busy_cursor );
         }
     }
 
@@ -383,6 +387,7 @@ public class MainWindow : Gtk.Window
     private void exit_build( string mode, bool success )
     {
         // ...
+        get_window().set_cursor( null );
         var timeout = new TimeoutSource( 1000 );
         timeout.set_callback( () =>
             {
