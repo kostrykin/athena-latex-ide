@@ -15,7 +15,7 @@ public class Session
 
     public SourceFileManager.SourceFile? master { public get; public set; }
 
-    public string output_path;
+    public string? output_path;
 
     #if DEBUG
     public static uint _debug_instance_counter = 0;

@@ -115,7 +115,13 @@ public class MainWindow : Gtk.Window
         delete_event.connect( () => { return !editor.announce_to_close_all_files(); } );
         Athena.instance.change_cursor.connect( ( c ) => { get_window().set_cursor( c ); } );
         set_buildable( BUILD_LOCKED_BY_EDITOR, !editor.is_buildable() );
-        reload_session();
+
+        Timeout.add( 0, () =>
+            {
+                reload_session();
+                return GLib.Source.REMOVE;
+            }
+        );
     }
 
     ~MainWindow()
@@ -301,8 +307,25 @@ public class MainWindow : Gtk.Window
         if( is_session_intermediate ) editor.close_all_files();
         else
         {
+            Athena.instance.override_cursor( busy_cursor );
+
             var xml = new SessionXml( editor );
             xml.read_from( Athena.instance.settings.current_session );
+            preview.pdf_path = editor.session.output_path;
+            build_types_view.active = xml.build_type_position;
+            Athena.instance.restore_cursor();
+
+            if( editor.get_source_views().size > 0 )
+            {
+                initialize_editor_pane();
+                stack.set_visible_child_name( "editor" );
+            }
+            else
+            {
+                // TODO: Tell, that loading the session has failed. Ask, whether a new one shall be started, or another one loaded.
+                editor.close_all_files( false );
+                start_new_session();
+            }
         }
         update_headerbar_title();
     }
@@ -359,6 +382,9 @@ public class MainWindow : Gtk.Window
                 {
                     stack.set_visible_child_name( "welcome" );
                     build_log.clear();
+                    editor.session.output_path = null;
+                    preview.pdf_path = null;
+                    pane.position = 0;
                 }
             }
         );
@@ -392,11 +418,17 @@ public class MainWindow : Gtk.Window
     {
         if( pane.position == 0 )
         {
-            int pane_position;
-            Gtk.Allocation alloc;
-            build_types_view.get_allocation( out alloc );
-            build_types_view.translate_coordinates( this, -alloc.width / 2 - 3, 0, out pane_position, null );
-            pane.position = pane_position;
+            /* For some reason, querying the `build_types_view` location *before* waiting for
+             * an idle produces wrong results. No idea what the reason might be. Screw Gtk.
+             */
+            Idle.add( () =>
+                {
+                    int pane_position;
+                    build_types_view.translate_coordinates( pane, 0, 0, out pane_position, null );
+                    pane.position = pane_position;
+                    return GLib.Source.REMOVE;
+                }
+            );
         }
     }
 

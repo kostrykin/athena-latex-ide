@@ -189,7 +189,8 @@ public class SourceFileView : Gtk.ScrolledWindow
 
     private void change_cursor( Gdk.Cursor? cursor )
     {
-        view.get_window( Gtk.TextWindowType.TEXT ).set_cursor( cursor ?? default_cursor );
+        var window = view.get_window( Gtk.TextWindowType.TEXT );
+        if( window != null) window.set_cursor( cursor ?? default_cursor );
     }
 
     private void set_modified_flag()
