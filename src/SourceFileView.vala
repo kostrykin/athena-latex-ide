@@ -21,6 +21,7 @@ public class SourceFileView : Gtk.ScrolledWindow
 
     public weak Editor editor { get; private set; }
     private Gtk.SourceView view;
+    private static Gdk.Cursor default_cursor;
 
     public Gtk.SourceBuffer buffer { get; private set; }
 
@@ -161,8 +162,11 @@ public class SourceFileView : Gtk.ScrolledWindow
         this.add( view );
         this.grab_focus.connect_after( () => { view.grab_focus(); } );
 
+        if( default_cursor == null ) default_cursor = new Gdk.Cursor( Gdk.CursorType.XTERM );
+
         weak SourceFileView weak_this = this;
         editor.file_saved.connect( weak_this.handle_file_saved );
+        Athena.instance.change_cursor.connect( weak_this.change_cursor );
 
         /* Wait for the control to return to the event loop before installing
          * the buffer callbacks, to avoid flagging that file view as modified
@@ -181,6 +185,11 @@ public class SourceFileView : Gtk.ScrolledWindow
         #if DEBUG
         --_debug_instance_counter;
         #endif
+    }
+
+    private void change_cursor( Gdk.Cursor? cursor )
+    {
+        view.get_window( Gtk.TextWindowType.TEXT ).set_cursor( cursor ?? default_cursor );
     }
 
     private void set_modified_flag()

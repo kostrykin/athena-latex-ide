@@ -107,6 +107,7 @@ public class MainWindow : Gtk.Window
             }
         );
 
+        Athena.instance.change_cursor.connect( ( c ) => { get_window().set_cursor( c ); } );
         set_buildable( BUILD_LOCKED_BY_EDITOR, !editor.is_buildable() );
     }
 
@@ -376,7 +377,7 @@ public class MainWindow : Gtk.Window
             current_build.batch.start();
 
             set_buildable( BUILD_LOCKED_BY_ONGOING_BUILD, true );
-            get_window().set_cursor( busy_cursor );
+            Athena.instance.override_cursor( busy_cursor );
         }
     }
 
@@ -443,7 +444,7 @@ public class MainWindow : Gtk.Window
 
     private void exit_build( string mode, bool success )
     {
-        get_window().set_cursor( null );
+        Athena.instance.restore_cursor();
         set_build_result( success );
         if( !success ) build_log.show();
 

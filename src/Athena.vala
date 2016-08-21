@@ -32,6 +32,23 @@ public class Athena : Granite.Application
         settings = new Settings();
     }
 
+    private Gee.Deque< Gdk.Cursor > cursors = new Gee.ArrayQueue< Gdk.Cursor >();
+
+    public void override_cursor( Gdk.Cursor cursor )
+    {
+        cursors.offer_head( cursor );
+        change_cursor( cursor );
+    }
+
+    public void restore_cursor()
+    {
+        cursors.poll_head();
+        Gdk.Cursor? cursor = cursors.peek_head();
+        change_cursor( cursor );
+    }
+
+    public signal void change_cursor( Gdk.Cursor? new_cursor );
+
     public override void activate()
     {
         var css    = new Gtk.CssProvider();
