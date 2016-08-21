@@ -22,6 +22,16 @@ public class Athena : Granite.Application
         about_license_type = Gtk.License.GPL_2_0;
     }
 
+    public Settings settings { get; private set; }
+    public static Athena instance { get; private set; }
+
+    public Athena()
+    {
+        if( _instance != null ) warning( "More than one application instance created" );
+        instance = this;
+        settings = new Settings();
+    }
+
     public override void activate()
     {
         var css    = new Gtk.CssProvider();

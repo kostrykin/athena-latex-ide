@@ -1,0 +1,21 @@
+<schemalist>
+  <schema id="org.kostrykin.athena" path="/org/kostrykin/athena/" gettext-domain="athena">
+
+    <key name="horizontal-scroll-in-preview" type="b">
+      <default>false</default>
+      <summary>Enable horizontal scrolling via scroll wheel in PDF preview?</summary>
+      <description>
+        Controls whether the scrolling is limited to vertical scrolling.
+      </description>
+    </key>
+
+    <key name="fit-preview-zoom-after-build" type="b">
+      <default>true</default>
+      <summary>Reduce zoom automatically to fit affected block into screen after build?</summary>
+      <description>
+        Allows reducing the PDF preview's current zoom automatically as necessary, if the selected area doesn't fit entirely into the screen.
+      </description>
+    </key>
+
+  </schema>
+</schemalist>
