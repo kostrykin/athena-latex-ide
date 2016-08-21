@@ -1,6 +1,14 @@
 <schemalist>
   <schema id="org.kostrykin.athena" path="/org/kostrykin/athena/" gettext-domain="athena">
 
+    <key name="current-session" type="s">
+      <default>""</default>
+      <summary>Path of the current session file</summary>
+      <description>
+        Points to the file, which is used to keep track of the current session, or an empty string, if the current session is intermediate.
+      </description>
+    </key>
+
     <key name="horizontal-scroll-in-preview" type="b">
       <default>false</default>
       <summary>Enable horizontal scrolling via scroll wheel in PDF preview?</summary>

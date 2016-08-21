@@ -10,14 +10,18 @@ PopplerPreview > GtkToolbar {
 }
 
 #files-view > .button,
-#btn-full-build {
+#btn-full-build,
+#btn-new-session,
+#btn-load-session {
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
   border-right: 0;
 }
 
 #btn-close-current-file,
-#btn-quick-build {
+#btn-quick-build,
+#btn-load-session,
+#btn-save-session {
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
 }

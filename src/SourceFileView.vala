@@ -287,4 +287,19 @@ public class SourceFileView : Gtk.ScrolledWindow
         }
     }
 
+    public double view_position
+    {
+        get
+        {
+            var vadj = get_vadjustment();
+            return ( vadj.value + vadj.page_size / 2 ) / vadj.upper;
+        }
+        set
+        {
+            var vadj = get_vadjustment();
+            vadj.value = value * vadj.upper - vadj.page_size / 2;
+            vadj.value_changed();
+        }
+    }
+
 }

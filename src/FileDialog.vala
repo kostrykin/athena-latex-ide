@@ -40,6 +40,7 @@ class FileDialog : Gtk.FileChooserDialog
         dlg.title = "Save File";
         dlg.add_button( "_Save", Gtk.ResponseType.ACCEPT );
         dlg.action = Gtk.FileChooserAction.SAVE;
+        dlg.do_overwrite_confirmation = true;
         return dlg.exec();
     }
 

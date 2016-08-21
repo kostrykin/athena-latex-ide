@@ -25,6 +25,7 @@ public class MainWindow : Gtk.Window
     public static const string HOTKEY_NEW         = "<Control>N";
     public static const string HOTKEY_CLOSE       = "<Control>W";
 
+    private Gtk.HeaderBar  headerbar  = new Gtk.HeaderBar();
     private Gtk.Overlay    overlay    = new Gtk.Overlay();
     private Gtk.Paned      pane       = new Gtk.Paned ( Gtk.Orientation.HORIZONTAL );
     private Gtk.Stack      stack      = new Gtk.Stack();
@@ -34,6 +35,10 @@ public class MainWindow : Gtk.Window
     private OverlayBar     build_info;
     private BuildLogView   build_log;
     private Gdk.Cursor     busy_cursor;
+
+    private Gtk.Button btn_new_session  = new Gtk.Button.with_label( "New" );
+    private Gtk.Button btn_load_session = new Gtk.Button.with_label( "Switch Session..." );
+    private Gtk.Button btn_save_session = new Gtk.Button.with_label( "Save As..." );
 
     private Gtk.ToolButton btn_build_log;
     private Gtk.Button     btn_quick_build = new Gtk.Button.with_label( "Quick Build" );
@@ -107,8 +112,10 @@ public class MainWindow : Gtk.Window
             }
         );
 
+        delete_event.connect( () => { return !editor.announce_to_close_all_files(); } );
         Athena.instance.change_cursor.connect( ( c ) => { get_window().set_cursor( c ); } );
         set_buildable( BUILD_LOCKED_BY_EDITOR, !editor.is_buildable() );
+        reload_session();
     }
 
     ~MainWindow()
@@ -184,11 +191,32 @@ public class MainWindow : Gtk.Window
 
     private void setup_headerbar( Athena app )
     {
-        var headerbar = new Gtk.HeaderBar();
-        headerbar.title = "Intermediate Session";
         headerbar.show_close_button = true;
         headerbar.get_style_context().add_class( "primary-toolbar" );
         headerbar.pack_end( app.create_appmenu( new Gtk.Menu() ) );
+
+        btn_new_session.name = "btn-new-session";
+        btn_new_session.can_focus = false;
+        btn_new_session.tooltip_text = "Closes the current session and starts a new one from scratch.";
+        btn_new_session.clicked.connect( start_new_session );
+
+        btn_load_session.name = "btn-load-session";
+        btn_load_session.can_focus = false;
+        btn_load_session.tooltip_text = "Switches to another, previously saved session.";
+        btn_load_session.clicked.connect( load_another_session );
+
+        btn_save_session.name = "btn-save-session";
+        btn_save_session.can_focus = false;
+        btn_save_session.tooltip_text = "Sets the file, which is to be used for keeping track of the current session.";
+        btn_save_session.clicked.connect( save_session_as );
+
+        var session_box = new Gtk.Box( Gtk.Orientation.HORIZONTAL, 0 );
+        var session_box_toolitem = new Gtk.ToolItem();
+        session_box.add( btn_new_session );
+        session_box.add( btn_load_session );
+        session_box.add( btn_save_session );
+        session_box_toolitem.add( session_box );
+        headerbar.pack_start( session_box_toolitem );
 
         btn_full_build.name = "btn-full-build";
         btn_full_build.can_focus = false;
@@ -229,6 +257,59 @@ public class MainWindow : Gtk.Window
         headerbar.pack_end( btn_build_log );
 
         this.set_titlebar( headerbar );
+    }
+
+    public void start_new_session()
+    {
+        if( !editor.close_all_files() ) return;
+        Athena.instance.settings.current_session = "";
+        reload_session();
+    }
+
+    public void load_another_session()
+    {
+        if( !editor.announce_to_close_all_files() ) return;
+        FileDialog.choose_readable_file_and( ( path ) =>
+            {
+                Athena.instance.settings.current_session = path;
+                reload_session();
+            }
+        );
+    }
+
+    public void save_session_as()
+    {
+        FileDialog.choose_writable_file_and( ( path ) =>
+            {
+                Athena.instance.settings.current_session = path ?? "";
+                save_session();
+            }
+        );
+    }
+
+    private void save_session()
+    {
+        var xml = new SessionXml( editor );
+        xml.build_type_position = build_types_view.active;
+        xml.write_to( Athena.instance.settings.current_session );
+    }
+
+    public bool is_session_intermediate { get { return Athena.instance.settings.current_session.length == 0; } }
+
+    private void reload_session()
+    {
+        if( is_session_intermediate ) editor.close_all_files();
+        else
+        {
+            var xml = new SessionXml( editor );
+            xml.read_from( Athena.instance.settings.current_session );
+        }
+        update_headerbar_title();
+    }
+
+    private void update_headerbar_title()
+    {
+        headerbar.title = is_session_intermediate ? "Intermediate Session" : Athena.instance.settings.current_session;
     }
 
     public void toggle_build_log()

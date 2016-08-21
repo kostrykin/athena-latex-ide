@@ -208,7 +208,7 @@ public class Editor : Gtk.Box
 
         var btn_save = new Gtk.ToolButton( ICON_SAVE, null );
         toolbar.add( btn_save );
-        btn_save.clicked.connect( save_current_file );
+        btn_save.clicked.connect( () => { save_current_file(); } );
         btn_save.tooltip_text = "Save %s".printf( Utils.format_hotkey( MainWindow.HOTKEY_SAVE ) );
         btn_save.show();
 
@@ -246,7 +246,7 @@ public class Editor : Gtk.Box
         btn_close.image = ICON_CLOSE;
         btn_close.can_focus = false;
         btn_close.show();
-        btn_close.clicked.connect( close_current_file );
+        btn_close.clicked.connect( () => { close_current_file(); } );
         btn_close.tooltip_text = "Close %s".printf( Utils.format_hotkey( MainWindow.HOTKEY_CLOSE ) );
         btn_close_toolitem.add( btn_close );
 
@@ -263,7 +263,7 @@ public class Editor : Gtk.Box
         toolbar.add( btn_master_toolitem );
 
         var mnu_save_as = new Gtk.MenuItem.with_label( "Save as..." );
-        mnu_save_as.activate.connect( save_current_file_as );
+        mnu_save_as.activate.connect( () => { save_current_file_as(); } );
         mnu_reload.activate.connect( reload_current_file );
 
         var menu = new Gtk.Menu();
@@ -390,11 +390,11 @@ public class Editor : Gtk.Box
         source_view.destroy();
     }
 
-    public void save_current_file()
+    public bool save_current_file()
     {
         if( current_file.path == null )
         {
-            save_current_file_as();
+            if( !save_current_file_as() ) return false;
         }
         else
         {
@@ -409,10 +409,12 @@ public class Editor : Gtk.Box
         }
 
         file_saved( current_file );
+        return true;
     }
 
-    public void save_current_file_as()
+    public bool save_current_file_as()
     {
+        bool result = false;
         FileDialog.choose_writable_file_and( ( path ) =>
             {
                 var position = session.files.find_position( path );
@@ -420,18 +422,22 @@ public class Editor : Gtk.Box
                 {
                     session.files.set_path( current_file.position, path );
                     files_view.set_active ( current_file.position );
-                    save_current_file();
+                    result = save_current_file();
                 }
                 else
                 {
                     // TODO: instruct to close `path` first
+                    result = false;
                 }
             }
         );
+        return result;
     }
 
-    public void close_current_file()
+    public void close_current_file( bool safely = true )
     {
+        if( !announce_to_close_current_file() ) return;
+
         var file     = current_file;
         var position = current_file.position;
 
@@ -448,6 +454,75 @@ public class Editor : Gtk.Box
         {
             resolve_conflict( null );
         }
+    }
+
+    public bool close_all_files( bool safely = true )
+    {
+        if( safely && !announce_to_close_all_files() ) return false;
+
+        handle_files_view_changes = false;
+        var views = new Gee.ArrayList< SourceFileView >();
+        views.add_all( get_source_views() );
+        foreach( var view in views )
+        {
+            session.files.close( view.file.position );
+            remove_source_view( view.file );
+            file_closed( view.file );
+        }
+        handle_files_view_changes = true;
+
+        return true;
+    }
+
+    public bool announce_to_close_current_file()
+    {
+        if( current_file.has_flags( Session.FLAGS_MODIFIED ) )
+        {
+            var dlg = new Gtk.MessageDialog( (Gtk.Window) get_toplevel()
+                                           ,  Gtk.DialogFlags.MODAL
+                                           ,  Gtk.MessageType.QUESTION
+                                           ,  Gtk.ButtonsType.NONE
+                                           , "This file is going to be closed." );
+
+            dlg.add_button( "Reset Changes", 1 );
+            dlg.add_button( "Cancel"       , 2 ).get_style_context().add_class( "primary" );
+            dlg.add_button( "Save"         , 0 );
+
+            dlg.secondary_text = "Shall it be saved before proceeding?";
+            dlg.set_default_response( 2 );
+
+            var dlg_result = dlg.run();
+            dlg.destroy();
+
+            switch( dlg_result )
+            {
+
+            case 0:
+                return save_current_file();
+
+            case 1:
+                return true;
+
+            case 2:
+            default:
+                return false;
+
+            }
+        }
+        else return true;
+    }
+
+    public bool announce_to_close_all_files()
+    {
+        foreach( var view in get_source_views() )
+        {
+            if( view.file.has_flags( Session.FLAGS_MODIFIED ) )
+            {
+                set_current_file_position( view.file.position );
+                if( !announce_to_close_current_file() ) return false;
+            }
+        }
+        return true;
     }
 
     public int files_count
