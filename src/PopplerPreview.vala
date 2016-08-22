@@ -19,6 +19,7 @@ public class PopplerPreview : PdfPreview
 
     private PopplerDisplay display = new PopplerDisplay();
     private PopplerChoreographer choreographer;
+    private Gtk.ToggleToolButton btn_zoom_best_match;
     private Gtk.Grid grid = new Gtk.Grid();
     private Gtk.Toolbar toolbar = new Gtk.Toolbar();
     private Gtk.Scale zoom;
@@ -80,10 +81,28 @@ public class PopplerPreview : PdfPreview
     {
         toolbar.set_icon_size( MainWindow.TOOLBAR_ICON_SIZE );
 
-        var btn_zoom_best_match = new Gtk.ToolButton( ICON_ZOOM_BEST_MATCH, null );
-        toolbar.add( btn_zoom_best_match );
-        btn_zoom_best_match.clicked.connect( zoom_best_match );
+        btn_zoom_best_match = new Gtk.ToggleToolButton();
+        btn_zoom_best_match.set_icon_widget( ICON_ZOOM_BEST_MATCH );
         btn_zoom_best_match.show();
+        btn_zoom_best_match.set_active( true );
+        btn_zoom_best_match.toggled.connect( () =>
+            {
+                if( btn_zoom_best_match.get_active() ) zoom_best_match();
+                zoom.set_sensitive( !btn_zoom_best_match.get_active() );
+            }
+        );
+        int my_current_width = -1;
+        size_allocate.connect_after( ( alloc ) =>
+            {
+                if( my_current_width != alloc.width )
+                {
+                    if( btn_zoom_best_match.get_active() ) display.zoom = display.best_match_zoom_level;
+                    my_current_width = alloc.width;
+                }
+            }
+        );
+        display.zoomed.connect( () => { btn_zoom_best_match.set_active( false ); } );
+        toolbar.add( btn_zoom_best_match );
 
         var btn_zoom_original = new Gtk.ToolButton( ICON_ZOOM_ORIGINAL, null );
         toolbar.add( btn_zoom_original );
@@ -151,6 +170,7 @@ public class PopplerPreview : PdfPreview
      */
     public void zoom_in()
     {
+        btn_zoom_best_match.set_active( false );
         for( int i = 0; i < ZOOM_STOPS.length; ++i )
         {
             if( ZOOM_STOPS[ i ] - ZOOM_LEVEL_EPSILON * ZOOM_STOPS[ i ] > display.zoom )
@@ -163,12 +183,14 @@ public class PopplerPreview : PdfPreview
 
     public void zoom_original()
     {
+        btn_zoom_best_match.set_active( false );
         choreographer.zoom_to( 1 );
     }
 
     public void zoom_best_match()
     {
-        choreographer.zoom_to( display.best_match_zoom_level );
+        if( !btn_zoom_best_match.get_active() ) btn_zoom_best_match.set_active( true );
+        else choreographer.zoom_to( display.best_match_zoom_level );
     }
 
     public override void show_rect( int page, Utils.RectD page_rect )
@@ -196,8 +218,9 @@ public class PopplerPreview : PdfPreview
             /* Adapt zoom level if necessary.
              * If adapting, then leave a small margin.
              */
-            if( global_rect.w > display.visible_area_width )
+            if( Athena.instance.settings.fit_preview_zoom_after_build && global_rect.w > display.visible_area_width )
             {
+                btn_zoom_best_match.set_active( false );
                 var suggested_zoom = display.zoom * visible_area.w / ( global_rect.w * 1.05 );
                 choreographer.zoom_to( suggested_zoom );
             }

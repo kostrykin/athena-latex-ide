@@ -339,36 +339,50 @@ public class MainWindow : Gtk.Window
         reset_session( true ); // this is (a) just to be sure and (b) to suffice the method's name
         if( !is_session_intermediate )
         {
+            string error = "";
             Athena.instance.override_cursor( busy_cursor );
 
-            var xml = new SessionXml( editor );
-            xml.read_from( Athena.instance.settings.current_session );
-            update_preview();
-            build_types_view.active = xml.build_type_position;
-            Athena.instance.restore_cursor();
-
-            if( editor.get_source_views().size > 0 )
+            try
             {
-                main_stack.set_visible_child_name( MAIN_STACK_EDITOR );
-                if( starting_up )
+                var xml = new SessionXml( editor );
+                xml.read_from( Athena.instance.settings.current_session );
+                update_preview();
+                build_types_view.active = xml.build_type_position;
+
+                if( editor.get_source_views().size > 0 )
                 {
-                    /* For some reason, querying the `build_types_view` location *before* waiting for
-                     * an idle produces wrong results. No idea what the reason might be. Screw Gtk.
-                     */
-                    Idle.add( () =>
-                        {
-                            initialize_editor_pane();
-                            return GLib.Source.REMOVE;
-                        }
-                    );
+                    main_stack.set_visible_child_name( MAIN_STACK_EDITOR );
+                    if( starting_up )
+                    {
+                        /* For some reason, querying the `build_types_view` location *before* waiting for
+                         * an idle produces wrong results. No idea what the reason might be. Screw Gtk.
+                         */
+                        Idle.add( () =>
+                            {
+                                initialize_editor_pane();
+                                return GLib.Source.REMOVE;
+                            }
+                        );
+                    }
+                    else initialize_editor_pane();
                 }
-                else initialize_editor_pane();
+                else error = "Session contains no files.";
             }
-            else
+            catch( XmlError xml_error )
+            {
+                error = xml_error.message;
+            }
+            finally
+            {
+                Athena.instance.restore_cursor();
+            }
+
+            if( error.length > 0 )
             {
                 // TODO: Tell, that loading the session has failed. Ask, whether a new one shall be started, or another one loaded.
+                warning( error );
                 editor.close_all_files( false );
-                start_new_session();
+                start_new_session( false );
             }
         }
     }

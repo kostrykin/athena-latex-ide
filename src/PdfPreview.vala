@@ -1,8 +1,17 @@
 public abstract class PdfPreview : Gtk.Box
 {
 
-    private string? _pdf_path;
-    public  string?  pdf_path { set { _pdf_path = value; reload(); reload_synctex(); } get { return _pdf_path; } }
+    private string? _pdf_path = null;
+    public  string?  pdf_path
+    {
+        set
+        {
+            _pdf_path = value;
+            reload();
+            reload_synctex();
+        }
+        get { return _pdf_path; }
+    }
 
     public abstract void reload();
 

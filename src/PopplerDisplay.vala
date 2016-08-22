@@ -99,7 +99,20 @@ public class PopplerDisplay : Gtk.DrawingArea
     private string? _pdf_path;
     public  string?  pdf_path { set { _pdf_path = value; reload(); } get { return _pdf_path; } }
 
+    /**
+     * Indicates, that the user issued a zoom-in or zoom-out.
+     *
+     * This signal is only fired, when the zoom is issued through direct interaction
+     * with the user, but not by changing the `zoom` property. It is also fired, if
+     * no actual change is done to the current zoom-level.
+     */
+    public signal void zoomed();
+
+    /**
+     * Fired, whenever the zoom level changes.
+     */
     public signal void zoom_changed();
+
     public signal void renderer_started();
     public signal void renderer_finished();
 
@@ -135,11 +148,13 @@ public class PopplerDisplay : Gtk.DrawingArea
                 if( ( event.state & Gdk.ModifierType.CONTROL_MASK ) != 0 )
                 {
                     zoom -= event.delta_y * Math.sqrt( zoom ) * zoom_speed;
+                    zoomed();
                     return true;
                 }
                 else
                 {
-                    move_view( event.delta_x * scroll_speed, event.delta_y * scroll_speed );
+                    int fx = Athena.instance.settings.horizontal_scroll_in_preview ? 1 : 0;
+                    move_view( fx * event.delta_x * scroll_speed, event.delta_y * scroll_speed );
                     return true;
                 }
             }
