@@ -10,10 +10,18 @@
     </key>
 
     <key name="horizontal-scroll-in-preview" type="b">
-      <default>false</default>
+      <default>true</default>
       <summary>Enable horizontal scrolling via scroll wheel in PDF preview?</summary>
       <description>
         Controls whether the scrolling is limited to vertical scrolling.
+      </description>
+    </key>
+
+    <key name="horizontal-scroll-in-preview-threshold" type="d">
+      <default>0.3</default>
+      <summary>How distinct has a horizontal scroll to be?</summary>
+      <description>
+        Discards horizontal shake when scrolling down the PDF preview.
       </description>
     </key>
 

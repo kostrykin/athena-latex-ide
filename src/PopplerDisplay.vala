@@ -143,6 +143,8 @@ public class PopplerDisplay : Gtk.DrawingArea
                   | Gdk.EventMask.SCROLL_MASK           // required to receive `scroll_event`
                   | Gdk.EventMask.SMOOTH_SCROLL_MASK ); // populates the `delta_x` and `delta_y` fields of the `scroll_event` argument
 
+        double last_horizontal_scroll_time = 0;
+        double horizontal_scroll_threshold = Athena.instance.settings.horizontal_scroll_in_preview_threshold;
         scroll_event.connect( ( event ) =>
             {
                 if( ( event.state & Gdk.ModifierType.CONTROL_MASK ) != 0 )
@@ -153,7 +155,9 @@ public class PopplerDisplay : Gtk.DrawingArea
                 }
                 else
                 {
-                    int fx = Athena.instance.settings.horizontal_scroll_in_preview ? 1 : 0;
+                    double now = GLib.get_real_time () / 1e6;
+                    if( Math.fabs( event.delta_x ) > horizontal_scroll_threshold ) last_horizontal_scroll_time = now;
+                    int fx = ( Athena.instance.settings.horizontal_scroll_in_preview && now - last_horizontal_scroll_time < 1 ? 1 : 0 );
                     move_view( fx * event.delta_x * scroll_speed, event.delta_y * scroll_speed );
                     return true;
                 }
