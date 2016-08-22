@@ -25,10 +25,16 @@ public class MainWindow : Gtk.Window
     public static const string HOTKEY_NEW         = "<Control>N";
     public static const string HOTKEY_CLOSE       = "<Control>W";
 
+    private static const string MAIN_STACK_EDITOR  = "editor";
+    private static const string MAIN_STACK_WELCOME = "welcome";
+    private static const string SIDE_STACK_PREVIEW = "preview";
+    private static const string SIDE_STACK_HELP    = "help";
+
     private Gtk.HeaderBar  headerbar  = new Gtk.HeaderBar();
     private Gtk.Overlay    overlay    = new Gtk.Overlay();
     private Gtk.Paned      pane       = new Gtk.Paned ( Gtk.Orientation.HORIZONTAL );
-    private Gtk.Stack      stack      = new Gtk.Stack();
+    private Gtk.Stack      main_stack = new Gtk.Stack();
+    private Gtk.Stack      side_stack = new Gtk.Stack();
     private Editor         editor     = new Editor();
     private PdfPreview     preview    = new PopplerPreview();
     private Gtk.AccelGroup hotkeys    = new Gtk.AccelGroup();
@@ -88,6 +94,7 @@ public class MainWindow : Gtk.Window
         this.setup_headerbar( app );
         this.setup_welcome_screen( app );
         this.setup_editor();
+        this.setup_side_stack();
         this.setup_hotkeys();
 
         this.build_log = new BuildLogView( btn_build_log );
@@ -99,10 +106,10 @@ public class MainWindow : Gtk.Window
 
         this.busy_cursor = new Gdk.Cursor( Gdk.CursorType.WATCH );
 
-        pane.pack1( overlay,  true,  true );
-        pane.pack2( preview, false, false );
+        pane.pack1(    overlay,  true,  true );
+        pane.pack2( side_stack, false, false );
         this.overlay.add( editor );
-        this.add( stack );
+        this.add( main_stack );
         this.add_accel_group( hotkeys );
 
         preview.source_requested.connect( ( file_path, line ) =>
@@ -112,13 +119,19 @@ public class MainWindow : Gtk.Window
             }
         );
 
-        delete_event.connect( () => { return !editor.announce_to_close_all_files(); } );
         Athena.instance.change_cursor.connect( ( c ) => { get_window().set_cursor( c ); } );
         set_buildable( BUILD_LOCKED_BY_EDITOR, !editor.is_buildable() );
 
+        delete_event.connect( () =>
+            {
+                save_session();
+                return !editor.announce_to_close_all_files();
+            }
+        );
+
         Timeout.add( 0, () =>
             {
-                reload_session();
+                reload_session( true );
                 return GLib.Source.REMOVE;
             }
         );
@@ -159,9 +172,9 @@ public class MainWindow : Gtk.Window
             ( accel_group, acceleratable, keyval, modifier ) =>
             {
                 handler( hotkey );
-                return false;
-            }
-        );
+                return true; // we have to return `true` here, because otherwise Gtk
+            }                // delivers the hotkey event twice when the focus changes
+        );                   // during the processing of that hotkey
     }
 
     private void handle_build_hotkey( string hotkey )
@@ -189,10 +202,15 @@ public class MainWindow : Gtk.Window
     {
         add_hotkey( HOTKEY_QUICK_BUILD, handle_build_hotkey );
         add_hotkey( HOTKEY_FULL_BUILD , handle_build_hotkey );
-        add_hotkey( HOTKEY_SAVE       , ( hotkey ) => { editor.save_current_file (); } );
-        add_hotkey( HOTKEY_OPEN       , ( hotkey ) => { editor.open_file         (); } );
-        add_hotkey( HOTKEY_NEW        , ( hotkey ) => { editor.open_new_file     (); } );
-        add_hotkey( HOTKEY_CLOSE      , ( hotkey ) => { editor.close_current_file(); } );
+        add_hotkey( HOTKEY_CLOSE      , () => { if( editor.current_file != null ) editor.close_current_file(); } );
+        add_hotkey( HOTKEY_SAVE       , () => { if( editor.current_file != null ) editor.save_current_file (); } );
+        add_hotkey( HOTKEY_OPEN       , () => { if( editor.current_file == null ) open_previous(); else editor.open_file    (); } );
+        add_hotkey( HOTKEY_NEW        , () => { if( editor.current_file == null ) open_new_file(); else editor.open_new_file(); } );
+    }
+
+    private void hotkey_new( string hotkey )
+    {
+        stdout.printf("hotkey: %s; null? %s\n", hotkey, editor.current_file==null?"y":"n");
     }
 
     private void setup_headerbar( Athena app )
@@ -204,7 +222,7 @@ public class MainWindow : Gtk.Window
         btn_new_session.name = "btn-new-session";
         btn_new_session.can_focus = false;
         btn_new_session.tooltip_text = "Closes the current session and starts a new one from scratch.";
-        btn_new_session.clicked.connect( start_new_session );
+        btn_new_session.clicked.connect( () => { start_new_session(); } );
 
         btn_load_session.name = "btn-load-session";
         btn_load_session.can_focus = false;
@@ -265,22 +283,94 @@ public class MainWindow : Gtk.Window
         this.set_titlebar( headerbar );
     }
 
-    public void start_new_session()
+    /**
+     * Prompts the user if there are any unsaved files and resets the current session to vanilla state.
+     *
+     * Does not prompt the user if `force` is set to `true`.
+     * Returns `false` only when the user cancels, returns `true` otherwise.
+     */
+    private bool reset_session( bool force = false )
+        ensures( !force || ( force && result ) ) // force => result
     {
-        if( !editor.close_all_files() ) return;
-        Athena.instance.settings.current_session = "";
-        reload_session();
+        var current_session = Athena.instance.settings.current_session; // save the current session file path,
+        if( !editor.close_all_files( !force ) ) return false;           // because closing all files starts a new session
+        Athena.instance.settings.current_session = current_session;     // and then reset the file path to the saved one
+        update_headerbar_title();
+
+        main_stack.set_visible_child_name( MAIN_STACK_WELCOME );
+        build_log.clear();
+        editor.session.output_path = null;
+        update_preview();
+
+        return true;
+    }
+
+    /**
+     * Prompts the user if there are any unsaved files and starts a new vanilla session.
+     */
+    public void start_new_session( bool save_current = true )
+    {
+        if( !is_session_intermediate && save_current ) save_session();
+        if( reset_session() )
+        {
+            Athena.instance.settings.current_session = "";
+            update_headerbar_title();
+        }
     }
 
     public void load_another_session()
     {
+        if( !is_session_intermediate ) save_session();
         if( !editor.announce_to_close_all_files() ) return;
         FileDialog.choose_readable_file_and( ( path ) =>
             {
                 Athena.instance.settings.current_session = path;
+                update_headerbar_title();
                 reload_session();
             }
         );
+    }
+
+    /**
+     * Reloads the current session.
+     */
+    private void reload_session( bool starting_up = false )
+    {
+        reset_session( true ); // this is (a) just to be sure and (b) to suffice the method's name
+        if( !is_session_intermediate )
+        {
+            Athena.instance.override_cursor( busy_cursor );
+
+            var xml = new SessionXml( editor );
+            xml.read_from( Athena.instance.settings.current_session );
+            update_preview();
+            build_types_view.active = xml.build_type_position;
+            Athena.instance.restore_cursor();
+
+            if( editor.get_source_views().size > 0 )
+            {
+                main_stack.set_visible_child_name( MAIN_STACK_EDITOR );
+                if( starting_up )
+                {
+                    /* For some reason, querying the `build_types_view` location *before* waiting for
+                     * an idle produces wrong results. No idea what the reason might be. Screw Gtk.
+                     */
+                    Idle.add( () =>
+                        {
+                            initialize_editor_pane();
+                            return GLib.Source.REMOVE;
+                        }
+                    );
+                }
+                else initialize_editor_pane();
+            }
+            else
+            {
+                // TODO: Tell, that loading the session has failed. Ask, whether a new one shall be started, or another one loaded.
+                editor.close_all_files( false );
+                start_new_session();
+            }
+        }
     }
 
     public void save_session_as()
@@ -288,6 +378,7 @@ public class MainWindow : Gtk.Window
         FileDialog.choose_writable_file_and( ( path ) =>
             {
                 Athena.instance.settings.current_session = path ?? "";
+                update_headerbar_title();
                 save_session();
             }
         );
@@ -297,38 +388,17 @@ public class MainWindow : Gtk.Window
     {
         var xml = new SessionXml( editor );
         xml.build_type_position = build_types_view.active;
-        xml.write_to( Athena.instance.settings.current_session );
+        if( is_session_intermediate )
+        {
+            // TODO: implement
+        }
+        else
+        {
+            xml.write_to( Athena.instance.settings.current_session );
+        }
     }
 
     public bool is_session_intermediate { get { return Athena.instance.settings.current_session.length == 0; } }
-
-    private void reload_session()
-    {
-        if( is_session_intermediate ) editor.close_all_files();
-        else
-        {
-            Athena.instance.override_cursor( busy_cursor );
-
-            var xml = new SessionXml( editor );
-            xml.read_from( Athena.instance.settings.current_session );
-            preview.pdf_path = editor.session.output_path;
-            build_types_view.active = xml.build_type_position;
-            Athena.instance.restore_cursor();
-
-            if( editor.get_source_views().size > 0 )
-            {
-                initialize_editor_pane();
-                stack.set_visible_child_name( "editor" );
-            }
-            else
-            {
-                // TODO: Tell, that loading the session has failed. Ask, whether a new one shall be started, or another one loaded.
-                editor.close_all_files( false );
-                start_new_session();
-            }
-        }
-        update_headerbar_title();
-    }
 
     private void update_headerbar_title()
     {
@@ -348,7 +418,7 @@ public class MainWindow : Gtk.Window
         welcome.append( "document-new", "New .TeX File", "Start with an empty LaTeX file.");
         welcome.append( "document-open", "Open", "Continue from a previously saved file or session." );
 
-        stack.add_named( welcome, "welcome" );
+        main_stack.add_named( welcome, MAIN_STACK_WELCOME );
 
         var self = this;
         welcome.activated.connect( ( index ) =>
@@ -373,19 +443,51 @@ public class MainWindow : Gtk.Window
         );
     }
 
+    private void setup_side_stack()
+    {
+        var help = new Gtk.Box( Gtk.Orientation.VERTICAL, 15 );
+        help.name = "help";
+        help.pack_start( new Gtk.Label( "" ), true, true );
+        help.pack_end  ( new Gtk.Label( "" ), true, true );
+
+        var howto_title = new Gtk.Label( "How to Build" );
+        howto_title.get_style_context().add_class( Granite.StyleClass.H2_TEXT );
+        howto_title.use_markup = true;
+        howto_title.wrap = true;
+        howto_title.wrap_mode = Pango.WrapMode.WORD;
+        howto_title.set_alignment( 0.5f, 0 );
+        help.add( howto_title );
+
+        var howto = new Gtk.Label(
+"""A <b>Quick Build</b> will be sufficient most of the time. If anything appears out of order, try a <b>Full Build</b>.""" );
+        howto.get_style_context().add_class( Granite.StyleClass.H3_TEXT );
+        howto.use_markup = true;
+        howto.wrap = true;
+        howto.wrap_mode = Pango.WrapMode.WORD;
+        howto.set_alignment( 0, 0 );
+        help.add( howto );
+
+        var details = new Gtk.Label(
+"""Particularly, a <b>Full Build</b> is appropriate after
+
+    &#8226; you changed the bibliography
+    &#8226; or updating any labels.""" );
+        details.use_markup = true;
+        details.wrap = true;
+        details.wrap_mode = Pango.WrapMode.WORD;
+        details.set_alignment( 0, 0 );
+        help.add( details );
+
+        side_stack.add_named( preview, SIDE_STACK_PREVIEW );
+        side_stack.add_named( help   , SIDE_STACK_HELP    );
+    }
+
     private void setup_editor()
     {
-        stack.add_named( pane, "editor" );
+        main_stack.add_named( pane, MAIN_STACK_EDITOR );
         editor.file_closed.connect( () =>
             {
-                if( editor.files_count == 0 )
-                {
-                    stack.set_visible_child_name( "welcome" );
-                    build_log.clear();
-                    editor.session.output_path = null;
-                    preview.pdf_path = null;
-                    pane.position = 0;
-                }
+                if( editor.files_count == 0 ) start_new_session( false );
             }
         );
         editor.buildable_invalidated.connect( () =>
@@ -416,27 +518,24 @@ public class MainWindow : Gtk.Window
 
     private void initialize_editor_pane()
     {
-        if( pane.position == 0 )
-        {
-            /* For some reason, querying the `build_types_view` location *before* waiting for
-             * an idle produces wrong results. No idea what the reason might be. Screw Gtk.
-             */
-            Idle.add( () =>
-                {
-                    int pane_position;
-                    build_types_view.translate_coordinates( pane, 0, 0, out pane_position, null );
-                    pane.position = pane_position;
-                    return GLib.Source.REMOVE;
-                }
-            );
-        }
+        int pane_position;
+        build_types_view.translate_coordinates( pane, 0, 0, out pane_position, null );
+        pane.position = pane_position;
+        Idle.add( () =>
+            {
+                int window_width = overlay.get_allocated_width() + side_stack.get_allocated_width(); // `get_allocated_width` misses 100px... -,-
+                side_stack.set_size_request( window_width - pane_position, 200 );
+                return GLib.Source.REMOVE;
+            }
+        );
     }
 
     private void open_new_file()
     {
-        initialize_editor_pane();
         editor.open_new_file();
-        stack.set_visible_child_name( "editor" );
+        side_stack.set_visible_child_name( SIDE_STACK_HELP );
+        main_stack.set_visible_child_name( MAIN_STACK_EDITOR );
+        initialize_editor_pane();
     }
 
     private void open_previous()
@@ -445,9 +544,10 @@ public class MainWindow : Gtk.Window
             {
                 if( path != null )
                 {
-                    initialize_editor_pane();
                     editor.open_file_from( path );
-                    stack.set_visible_child_name( "editor" );
+                    side_stack.set_visible_child_name( SIDE_STACK_HELP );
+                    main_stack.set_visible_child_name( MAIN_STACK_EDITOR );
+                    initialize_editor_pane();
                 }
             }
         );
@@ -518,6 +618,7 @@ public class MainWindow : Gtk.Window
         /* The `pdf_path` update reloads the preview and re-initializes synctex implicitly.
          */
         preview.pdf_path = editor.session.output_path;
+        side_stack.set_visible_child_name( editor.session.output_path == null ? SIDE_STACK_HELP : SIDE_STACK_PREVIEW );
 
         if( current_build != null )
         {

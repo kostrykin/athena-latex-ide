@@ -9,6 +9,18 @@ public class AnimationControl
         internal double duration;
         internal double time0;
 
+        #if DEBUG
+        public static uint _debug_instance_counter = 0;
+        public Animation()
+        {
+            ++_debug_instance_counter;
+        }
+        ~Animation()
+        {
+            --_debug_instance_counter;
+        }
+        #endif
+
         internal abstract void update( double progress );
 
         /**

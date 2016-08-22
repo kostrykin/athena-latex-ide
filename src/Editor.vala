@@ -256,11 +256,17 @@ public class Editor : Gtk.Box
         toolbar.add( new Gtk.SeparatorToolItem() );
 
         var btn_master_toolitem = new Gtk.ToolItem();
+        toolbar.add( btn_master_toolitem );
         btn_master_toolitem.add( btn_master );
         btn_master.can_focus = false;
         btn_master.tooltip_text = "Always build this file";
-        btn_master.toggled.connect( set_current_file_master );
-        toolbar.add( btn_master_toolitem );
+        btn_master.toggled.connect( () =>
+            {
+                if( btn_master.get_active() ) session.master = current_file;
+                else if( session.master == current_file ) session.master = null;
+            }
+        );
+        session.master_changed.connect( handle_master_changed );
 
         var mnu_save_as = new Gtk.MenuItem.with_label( "Save as..." );
         mnu_save_as.activate.connect( () => { save_current_file_as(); } );
@@ -323,30 +329,11 @@ public class Editor : Gtk.Box
         session.files.set_flags( current_file.position, Session.FLAGS_MODIFIED, false );
     }
 
-    public void set_current_file_master()
+    private void handle_master_changed( SourceFileManager.SourceFile? old )
     {
-        if( btn_master.get_active() )
-        {
-            if( session.master != current_file )
-            {
-                if( session.master != null )
-                {
-                    var position = session.master.position;
-                    session.master = null;
-                    update_files_model( position, 1 );
-                }
-                session.master = current_file;
-                update_files_model( current_file.position, 1 );
-            }
-        }
-        else
-        {
-            if( session.master == current_file )
-            {
-                session.master = null;
-                update_files_model( current_file.position, 1 );
-            }
-        }
+        btn_master.set_active( session.master == current_file );
+        if( old != null ) update_files_model( old.position, 1 );
+        update_files_model( current_file.position, 1 );
         buildable_invalidated();
     }
 

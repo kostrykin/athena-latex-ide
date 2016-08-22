@@ -36,3 +36,13 @@ PopplerPreview > GtkToolbar {
   padding-left: 3px;
 }
 
+#help > GtkLabel {
+  padding-left: 30px;
+  padding-right: 20px;
+  padding-bottom: 10px;
+}
+
+#help > GtkLabel:nth-child(2) {
+  padding-left: 20px;
+}
+

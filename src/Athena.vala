@@ -93,6 +93,7 @@ public class Athena : Granite.Application
         no_leaks = check_leak(                   "PdfPreview",                   PdfPreview._debug_instance_counter ) && no_leaks;
         no_leaks = check_leak(                 "BuildLogView",                 BuildLogView._debug_instance_counter ) && no_leaks;
         no_leaks = check_leak(                   "SessionXml",                   SessionXml._debug_instance_counter ) && no_leaks;
+        no_leaks = check_leak(   "AnimationControl.Animation",   AnimationControl.Animation._debug_instance_counter ) && no_leaks;
 
         if( no_leaks ) info( "No memory leaks detected :)" );
         #endif
