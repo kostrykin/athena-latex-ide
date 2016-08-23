@@ -474,6 +474,7 @@ public class Editor : Gtk.Box
             dlg.add_button( "Reset Changes", 1 );
             dlg.add_button( "Cancel"       , 2 ).get_style_context().add_class( "primary" );
             dlg.add_button( "Save"         , 0 );
+            Utils.apply_dialog_style( dlg );
 
             dlg.secondary_text = "Shall it be saved before proceeding?";
             dlg.set_default_response( 2 );

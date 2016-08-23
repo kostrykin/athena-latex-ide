@@ -61,4 +61,11 @@ namespace Utils
         return "[%s]".printf( hotkey );
     }
 
+    public void apply_dialog_style( Gtk.Dialog dlg )
+    {
+        dlg.resizable    = false;
+        dlg.deletable    = false;
+        dlg.border_width = 5;
+    }
+
 }

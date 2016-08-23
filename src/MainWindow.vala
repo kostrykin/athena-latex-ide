@@ -215,9 +215,21 @@ public class MainWindow : Gtk.Window
 
     private void setup_headerbar( Athena app )
     {
+        var mnu_settings = new Gtk.MenuItem.with_label( "Preferences" );
+        mnu_settings.activate.connect( () =>
+            {
+                var dlg = new SettingsDialog( this );
+                dlg.run();
+                dlg.destroy();
+            }
+        );
+
+        var app_menu = new Gtk.Menu();
+        app_menu.add( mnu_settings );
+
         headerbar.show_close_button = true;
         headerbar.get_style_context().add_class( "primary-toolbar" );
-        headerbar.pack_end( app.create_appmenu( new Gtk.Menu() ) );
+        headerbar.pack_end( app.create_appmenu( app_menu ) );
 
         btn_new_session.name = "btn-new-session";
         btn_new_session.can_focus = false;

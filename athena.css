@@ -46,3 +46,24 @@ PopplerPreview > GtkToolbar {
   padding-left: 20px;
 }
 
+SettingsDialog GtkStackSwitcher {
+}
+
+SettingsDialog .section-title {
+  padding-bottom: 15px;
+}
+
+SettingsDialog .label {
+  font-weight: bold;
+}
+
+SettingsDialog .description {
+  padding-top: 10px;
+  padding-bottom: 15px;
+}
+
+SettingsDialog .label,
+SettingsDialog .description {
+  padding-left: 15px;
+}
+
