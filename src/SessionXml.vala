@@ -166,7 +166,7 @@ public class SessionXml
             var file = loader.editor.open_file_from( path );
             var file_view = loader.editor.get_source_view( file );
             file_view.current_line = line;
-            file_view.view_position = view;
+            Idle.add( () => { file_view.view_position = view; return false; } );
 
             if( active ) this.active = file;
             if( master ) loader.editor.session.master = file;
