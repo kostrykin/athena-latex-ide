@@ -12,9 +12,12 @@ public class SettingsDialog : Gtk.Dialog
     private Gtk.Stack areas_view = new Gtk.Stack();
 
     private Gtk.Switch       whitespaces_switch = new Gtk.Switch();
+    private Gtk.Switch       auto_indent_switch = new Gtk.Switch();
+    private Gtk.SpinButton   indent_width_editor = new Gtk.SpinButton.with_range( 1, 8, 1 );
     private Gtk.Switch       horizontal_scroll_in_preview_switch = new Gtk.Switch();
     private Gtk.ComboBoxText horizontal_scroll_in_preview_threshold_chooser;
     private Gtk.Switch       fit_preview_zoom_after_build_switch = new Gtk.Switch();
+    private Gtk.Switch       use_animations_switch = new Gtk.Switch();
 
     #if DEBUG
     public static uint _debug_instance_counter = 0;
@@ -111,6 +114,12 @@ public class SettingsDialog : Gtk.Dialog
 
         public void add_property( string label )
         {
+            if( last_property_line == last_line )
+            {
+                var spacer = new Gtk.Box( Gtk.Orientation.VERTICAL, 0 );
+                spacer.set_size_request( 1, 10 );
+                container.attach( spacer, 0, ++last_line, 2, 1 );
+            }
             container.attach( create_label( label ), 0, ++last_line, 1, 1 );
             last_property_line = last_line;
         }
@@ -133,10 +142,19 @@ public class SettingsDialog : Gtk.Dialog
         Layout layout = Layout();
         areas_view.add_titled( layout.container, AREA_EDITOR, "Editor" );
 
-        layout.add_section( "Tabs" );
+        layout.add_section( "Indentation" );
+
+        layout.add_property( "Indent width:" );
+        layout.set_controller( indent_width_editor );
+        settings.schema.bind( "indent-width", indent_width_editor, "value", SettingsBindFlags.DEFAULT );
 
         layout.add_property( "Use whitespaces instead of tabs:" );
         layout.set_controller( whitespaces_switch );
+        settings.schema.bind( "whitespaces", whitespaces_switch, "active", SettingsBindFlags.DEFAULT );
+
+        layout.add_property( "Indent automatically:" );
+        layout.set_controller( auto_indent_switch );
+        settings.schema.bind( "auto-indent", auto_indent_switch, "active", SettingsBindFlags.DEFAULT );
     }
 
     private void populate_interaction_settings()
@@ -180,12 +198,19 @@ public class SettingsDialog : Gtk.Dialog
         layout.set_controller( fit_preview_zoom_after_build_switch );
         layout.set_description( "Reduces the PDF preview's current zoom automatically on demand, if the selected area doesn't fit entirely into the screen." );
         settings.schema.bind( "fit-preview-zoom-after-build", fit_preview_zoom_after_build_switch, "active", SettingsBindFlags.DEFAULT );
+
+        /*
+        layout.add_property( "Use animations:" );
+        layout.set_controller( use_animations_switch );
+        */
     }
 
     private void populate_build_types_settings()
     {
+        /*
         var vbox = new Gtk.Box( Gtk.Orientation.VERTICAL, 10 );
         areas_view.add_titled( vbox, AREA_BUILD_TYPES, "Build Types" );
+        */
     }
 
 }

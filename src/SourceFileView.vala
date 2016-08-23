@@ -132,6 +132,15 @@ public class SourceFileView : Gtk.ScrolledWindow
     public static uint _debug_instance_counter = 0;
     #endif
 
+    private void apply_settings()
+    {
+        var settings = Athena.instance.settings;
+
+        text_view.tab_width = settings.indent_width;
+        text_view.auto_indent = settings.auto_indent;
+        text_view.insert_spaces_instead_of_tabs = settings.whitespaces;
+    }
+
     public SourceFileView( Editor editor, SourceFileManager.SourceFile file )
     {
         #if DEBUG
@@ -149,11 +158,14 @@ public class SourceFileView : Gtk.ScrolledWindow
         text_view.buffer = buffer;
 	text_view.show_line_marks = true;
 	text_view.highlight_current_line = true;
-        text_view.tab_width = 4;
         text_view.override_font( DEFAULT_FONT );
-        text_view.set_auto_indent( true );
         text_view.set_show_line_numbers( true );
+        text_view.indent_on_tab = true;
         text_view.set_wrap_mode( Gtk.WrapMode.WORD_CHAR );
+
+        apply_settings();
+        weak SourceFileView weak_this = this;
+        Athena.instance.settings.changed.connect( weak_this.apply_settings );
 
         partitioning = new SourcePartitioning( buffer, () => { return new Partition( this ); } );
         text_view.get_completion().add_provider( editor.reference_completion_provider );
@@ -164,7 +176,6 @@ public class SourceFileView : Gtk.ScrolledWindow
 
         if( default_cursor == null ) default_cursor = new Gdk.Cursor( Gdk.CursorType.XTERM );
 
-        weak SourceFileView weak_this = this;
         editor.file_saved.connect( weak_this.handle_file_saved );
         Athena.instance.change_cursor.connect( weak_this.change_cursor );
 

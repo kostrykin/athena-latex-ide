@@ -1,6 +1,21 @@
 <schemalist>
   <schema id="org.kostrykin.athena" path="/org/kostrykin/athena/" gettext-domain="athena">
 
+    <key name="indent-width" type="i">
+      <default>2</default>
+      <summary>Indent width</summary>
+    </key>
+
+    <key name="whitespaces" type="b">
+      <default>false</default>
+      <summary>Use whitespaces instead of tabs</summary>
+    </key>
+
+    <key name="auto-indent" type="b">
+      <default>true</default>
+      <summary>Indent automatically</summary>
+    </key>
+
     <key name="current-session" type="s">
       <default>""</default>
       <summary>Path of the current session file</summary>
