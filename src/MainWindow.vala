@@ -24,6 +24,7 @@ public class MainWindow : Gtk.Window
     public static const string HOTKEY_OPEN        = "<Control>O";
     public static const string HOTKEY_NEW         = "<Control>N";
     public static const string HOTKEY_CLOSE       = "<Control>W";
+    public static const string HOTKEY_SEARCH      = "<Control>F";
 
     private static const string MAIN_STACK_EDITOR  = "editor";
     private static const string MAIN_STACK_WELCOME = "welcome";
@@ -41,6 +42,8 @@ public class MainWindow : Gtk.Window
     private OverlayBar     build_info;
     private BuildLogView   build_log;
     private Gdk.Cursor     busy_cursor;
+
+    private Gee.List< weak Gtk.Widget > editor_dependent_widgets = new Gee.ArrayList< weak Gtk.Widget >();
 
     private Gtk.Button btn_new_session  = new Gtk.Button.with_label( "New" );
     private Gtk.Button btn_load_session = new Gtk.Button.with_label( "Switch Session..." );
@@ -111,6 +114,8 @@ public class MainWindow : Gtk.Window
         this.overlay.add( editor );
         this.add( main_stack );
         this.add_accel_group( hotkeys );
+
+        foreach( var w in editor_dependent_widgets ) w.sensitive = false;
 
         preview.source_requested.connect( ( file_path, line ) =>
             {
@@ -206,6 +211,7 @@ public class MainWindow : Gtk.Window
         add_hotkey( HOTKEY_SAVE       , () => { if( editor.current_file != null ) editor.save_current_file (); } );
         add_hotkey( HOTKEY_OPEN       , () => { if( editor.current_file == null ) open_previous(); else editor.open_file    (); } );
         add_hotkey( HOTKEY_NEW        , () => { if( editor.current_file == null ) open_new_file(); else editor.open_new_file(); } );
+        add_hotkey( HOTKEY_SEARCH     , editor.toggle_search );
     }
 
     private void hotkey_new( string hotkey )
@@ -224,7 +230,13 @@ public class MainWindow : Gtk.Window
             }
         );
 
+        var mnu_search = new Gtk.MenuItem.with_label( "Search..." );
+        mnu_search.activate.connect( editor.toggle_search );
+        editor_dependent_widgets.add( mnu_search );
+
         var app_menu = new Gtk.Menu();
+        app_menu.add( mnu_search );
+        app_menu.add( new Gtk.SeparatorMenuItem() );
         app_menu.add( mnu_settings );
 
         headerbar.show_close_button = true;
@@ -314,6 +326,7 @@ public class MainWindow : Gtk.Window
         editor.session.output_path = null;
         update_preview();
 
+        foreach( var w in editor_dependent_widgets ) w.sensitive = false;
         return true;
     }
 
@@ -544,6 +557,8 @@ public class MainWindow : Gtk.Window
 
     private void initialize_editor_pane()
     {
+        foreach( var w in editor_dependent_widgets ) w.sensitive = true;
+
         int pane_position;
         build_types_view.translate_coordinates( pane, 0, 0, out pane_position, null );
         pane.position = pane_position;

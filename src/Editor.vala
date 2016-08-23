@@ -20,11 +20,13 @@ public class Editor : Gtk.Box
         ICON_DETAILS = new Gtk.Image.from_icon_name( "open-menu-symbolic"    , MainWindow.TOOLBAR_ICON_SIZE );
     }
 
-    private Gtk.ListStore    files      = new Gtk.ListStore( 3, typeof( string ), typeof( string ), typeof( string ) );
-    private Gtk.Stack        stack      = new Gtk.Stack(); 
-    private Gtk.Toolbar      toolbar    = new Gtk.Toolbar();
-    private Gtk.MenuItem     mnu_reload = new Gtk.MenuItem.with_label( "Reload" );
-    private Gtk.ToggleButton btn_master = new Gtk.ToggleButton.with_label( "Master" );
+    private Gtk.ListStore    files           = new Gtk.ListStore( 3, typeof( string ), typeof( string ), typeof( string ) );
+    private Gtk.Stack        stack           = new Gtk.Stack(); 
+    private Gtk.Toolbar      toolbar         = new Gtk.Toolbar();
+    private Gtk.MenuItem     mnu_reload      = new Gtk.MenuItem.with_label( "Reload" );
+    private Gtk.ToggleButton btn_master      = new Gtk.ToggleButton.with_label( "Master" );
+    private Gtk.Revealer     search_revealer = new Gtk.Revealer();
+    private SearchManager    search_manager;
     private Gtk.ComboBox     files_view;
 
     private Gtk.InfoBar conflict_info_bar = new Gtk.InfoBar();
@@ -60,6 +62,8 @@ public class Editor : Gtk.Box
         this.setup_infobars();
         this.pack_start( conflict_info_bar, false );
         this.setup_toolbar();
+        this.setup_search();
+        this.pack_end( search_revealer, false, true );
         this.pack_end( stack, true, true );
         this.pack_end( conflict_tool_bar, false );
         this.stack.show();
@@ -81,6 +85,19 @@ public class Editor : Gtk.Box
     {
         this.session = null;
         base.destroy();
+    }
+
+    private void setup_search()
+    {
+        weak Editor weak_this = this;
+
+        search_manager = new SearchManager( this );
+        search_manager.get_style_context().add_class( "search-bar" );
+        search_manager.need_hide.connect( weak_this.hide_search );
+
+        search_revealer.add( search_manager );
+        search_revealer.show_all();
+        search_revealer.reveal_child = false;
     }
 
     private void setup_infobars()
@@ -437,10 +454,8 @@ public class Editor : Gtk.Box
         remove_source_view( file );
         file_closed( file );
 
-        if( file.has_flags( Session.FLAGS_CONFLICT ) )
-        {
-            resolve_conflict( null );
-        }
+        if( file.has_flags( Session.FLAGS_CONFLICT ) ) resolve_conflict( null );
+        if( current_file == null ) search_revealer.reveal_child = false;
     }
 
     public bool close_all_files( bool safely = true )
@@ -465,7 +480,7 @@ public class Editor : Gtk.Box
     {
         if( current_file.has_flags( Session.FLAGS_MODIFIED ) )
         {
-            var dlg = new Gtk.MessageDialog( (Gtk.Window) get_toplevel()
+            var dlg = new Gtk.MessageDialog(  get_toplevel() as Gtk.Window
                                            ,  Gtk.DialogFlags.MODAL
                                            ,  Gtk.MessageType.QUESTION
                                            ,  Gtk.ButtonsType.NONE
@@ -607,6 +622,7 @@ public class Editor : Gtk.Box
                 }
                 mnu_reload.set_sensitive( current_file.path != null );
                 btn_master.set_active( session.master == current_file );
+                search_manager.set_text_view( source_view );
             }
             else
             {
@@ -671,6 +687,32 @@ public class Editor : Gtk.Box
     public Gee.Collection< SourceFileView > get_source_views()
     {
         return source_views.values;
+    }
+
+    public void toggle_search()
+    {
+        if( current_file == null ) return;
+        var source_view = get_source_view( current_file );
+
+        Gtk.Widget? focused_widget = ( get_toplevel() as Gtk.Window ).get_focus();
+        bool is_search_active = focused_widget != null && Utils.is_contained_within( search_manager, focused_widget );
+        if( is_search_active ) hide_search();
+        else
+        {
+            var selection = source_view.get_selection();
+            search_revealer.reveal_child = true;
+            if( selection.length > 0 ) search_manager.search_entry.text = selection;
+            search_manager.search_entry.select_region( 0, -1 );
+            search_manager.search_entry.grab_focus();
+        }
+    }
+
+    private void hide_search()
+    {
+        if( current_file == null ) return;
+        search_manager.search_entry.text = "";
+        search_revealer.reveal_child = false;
+        get_source_view( current_file ).grab_focus();
     }
 
 }

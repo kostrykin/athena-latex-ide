@@ -68,4 +68,12 @@ namespace Utils
         dlg.border_width = 5;
     }
 
+    public bool is_contained_within( Gtk.Widget parent, Gtk.Widget descendant )
+    {
+        if( descendant.get_parent() == parent ) return true;
+        else
+        if( descendant.get_parent() != null ) return is_contained_within( parent, descendant.get_parent() );
+        else return false;
+    }
+
 }

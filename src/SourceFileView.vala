@@ -20,7 +20,7 @@ public class SourceFileView : Gtk.ScrolledWindow
     public SourceStructure.SimpleNode structure { public get; private set; default = new SourceStructure.SimpleNode(); }
 
     public weak Editor editor { get; private set; }
-    private Gtk.SourceView view;
+    public Gtk.SourceView text_view { get; private set; }
     private static Gdk.Cursor default_cursor;
 
     public Gtk.SourceBuffer buffer { get; private set; }
@@ -41,7 +41,7 @@ public class SourceFileView : Gtk.ScrolledWindow
             buffer.get_iter_at_mark( out iter, buffer.get_insert() );
             iter.set_line( value );
             buffer.place_cursor( iter );
-            view.scroll_to_iter( iter, 0, true, 0.5, 0.5 );
+            text_view.scroll_to_iter( iter, 0, true, 0.5, 0.5 );
         }
         get
         {
@@ -145,22 +145,22 @@ public class SourceFileView : Gtk.ScrolledWindow
         buffer.set_style_scheme( STYLE_SCHEME );
         update_buffer_language();
 
-        view = new Gtk.SourceView();
-        view.buffer = buffer;
-	view.show_line_marks = true;
-	view.highlight_current_line = true;
-        view.tab_width = 4;
-        view.override_font( DEFAULT_FONT );
-        view.set_auto_indent( true );
-        view.set_show_line_numbers( true );
-        view.set_wrap_mode( Gtk.WrapMode.WORD_CHAR );
+        text_view = new Gtk.SourceView();
+        text_view.buffer = buffer;
+	text_view.show_line_marks = true;
+	text_view.highlight_current_line = true;
+        text_view.tab_width = 4;
+        text_view.override_font( DEFAULT_FONT );
+        text_view.set_auto_indent( true );
+        text_view.set_show_line_numbers( true );
+        text_view.set_wrap_mode( Gtk.WrapMode.WORD_CHAR );
 
         partitioning = new SourcePartitioning( buffer, () => { return new Partition( this ); } );
-        view.get_completion().add_provider( editor.reference_completion_provider );
-        view.get_completion().add_provider( editor.bib_entry_completion_provider );
+        text_view.get_completion().add_provider( editor.reference_completion_provider );
+        text_view.get_completion().add_provider( editor.bib_entry_completion_provider );
 
-        this.add( view );
-        this.grab_focus.connect_after( () => { view.grab_focus(); } );
+        this.add( text_view );
+        this.grab_focus.connect_after( () => { text_view.grab_focus(); } );
 
         if( default_cursor == null ) default_cursor = new Gdk.Cursor( Gdk.CursorType.XTERM );
 
@@ -189,7 +189,7 @@ public class SourceFileView : Gtk.ScrolledWindow
 
     private void change_cursor( Gdk.Cursor? cursor )
     {
-        var window = view.get_window( Gtk.TextWindowType.TEXT );
+        var window = text_view.get_window( Gtk.TextWindowType.TEXT );
         if( window != null) window.set_cursor( cursor ?? default_cursor );
     }
 
@@ -301,6 +301,14 @@ public class SourceFileView : Gtk.ScrolledWindow
             vadj.value = value * vadj.upper - vadj.page_size / 2;
             vadj.value_changed();
         }
+    }
+
+    public string get_selection()
+    {
+        Gtk.TextIter start;
+        Gtk.TextIter end;
+        if( buffer.get_selection_bounds( out start, out end ) ) return buffer.get_text( start, end, true );
+        else return "";
     }
 
 }
