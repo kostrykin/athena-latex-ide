@@ -1,6 +1,8 @@
 public class PackageAnalyzer : Object
 {
 
+    private static const int CACHED_PACKAGES_COUNT = 20;
+
     public class Request
     {
         public string  package_name;
@@ -44,11 +46,7 @@ public class PackageAnalyzer : Object
         {
             analyzer_thread = this.analyzer_thread;
         }
-        if( analyzer_thread != null )
-        {
-            analyzer_thread.join();
-            this.analyzer_thread = null;
-        }
+        if( analyzer_thread != null ) analyzer_thread.join();
     }
 
     public void enqueue( Request request )
@@ -56,7 +54,7 @@ public class PackageAnalyzer : Object
         bool restart;
         lock( mutex )
         {
-            restart = request_queue.peek() == null;
+            restart = analyzer_thread == null;
             request_queue.offer( request );
         }
         if( restart )
@@ -83,6 +81,11 @@ public class PackageAnalyzer : Object
             package_info.name = request.package_name;
             dispose_request( package_info, request.path );
             dispose_package( package_info, request );
+            Thread.usleep( (ulong) 1e5 );
+        }
+        lock( mutex )
+        {
+            analyzer_thread = null;
         }
         return null;
     }
