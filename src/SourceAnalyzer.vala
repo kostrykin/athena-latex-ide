@@ -4,13 +4,14 @@ public class SourceAnalyzer : Object
     private static Once< SourceAnalyzer > _instance;
     public  static SourceAnalyzer instance { get { return _instance.once( () => { return new SourceAnalyzer(); } ); } }
 
-    private Regex    include_pattern;
-    private Regex      input_pattern;
-    private Regex      label_pattern;
-    private Regex usepackage_pattern;
-    private Regex  bib_entry_pattern;
-    private Regex newcommand_pattern;
-    private Regex        def_pattern;
+    private Regex       include_pattern;
+    private Regex         input_pattern;
+    private Regex         label_pattern;
+    private Regex    usepackage_pattern;
+    private Regex documentclass_pattern;
+    private Regex     bib_entry_pattern;
+    private Regex    newcommand_pattern;
+    private Regex           def_pattern;
 
     /**
      * Creates a new pattern, which matches single-parameter commands, that are written on a single line.
@@ -24,10 +25,11 @@ public class SourceAnalyzer : Object
     {
         try
         {
-               include_pattern = create_simple_command_pattern(    "include" );
-                 input_pattern = create_simple_command_pattern(      "input" );
-                 label_pattern = create_simple_command_pattern(      "label" );
-            usepackage_pattern = create_simple_command_pattern( "usepackage" );
+                  include_pattern = create_simple_command_pattern(       "include" );
+                    input_pattern = create_simple_command_pattern(         "input" );
+                    label_pattern = create_simple_command_pattern(         "label" );
+            documentclass_pattern = create_simple_command_pattern( "documentclass" );
+               usepackage_pattern = create_simple_command_pattern(    "usepackage" );
              bib_entry_pattern = new Regex( """[^\\/]*@[a-z]{3,}{ *([A-Za-z0-9_:]+)""", RegexCompileFlags.ANCHORED );
             newcommand_pattern = new Regex( """[^%]*\\(?:re)?newcommand{\\([A-Za-z0-9_:]+)}""", RegexCompileFlags.ANCHORED );
                    def_pattern = new Regex( """[^%]*\\def\\([A-Za-z0-9_:]+)""", RegexCompileFlags.ANCHORED );
@@ -82,7 +84,8 @@ public class SourceAnalyzer : Object
 
     public void find_package_references( string source, StringHandler handle )
     {
-        find_single_line_pattern( source, handle, usepackage_pattern );
+        find_single_line_pattern( source, handle,    usepackage_pattern );
+        find_single_line_pattern( source, handle, documentclass_pattern );
     }
 
     private static const string TEX_SUFFIX = ".tex";
