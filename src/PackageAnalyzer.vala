@@ -1,8 +1,6 @@
 public class PackageAnalyzer : Object
 {
 
-    private static const int CACHED_PACKAGES_COUNT = 20;
-
     public class Request
     {
         public string  package_name;
@@ -15,23 +13,29 @@ public class PackageAnalyzer : Object
         }
 
         public signal void done( Result package_info );
+
+        public static uint hash( Request request )
+        {
+            Gee.HashDataFunc str_hash = Gee.Functions.get_hash_func_for( typeof( string ) );
+            return str_hash( request.package_name );
+        }
+
+        public static bool equal( Request a, Request b )
+        {
+            return a.package_name == b.package_name && a.path == b.path;
+        }
     }
+
+    public signal void done( Request request, Result package_info );
 
     private int mutex;
     private Thread< void* > analyzer_thread;
     private Gee.Queue< Request > request_queue = new Gee.ArrayQueue< Request >();
 
-    private static Once< PackageAnalyzer > _instance;
-    public  static PackageAnalyzer instance { get { return _instance.once( () => { return new PackageAnalyzer(); } ); } }
-
     public class Result
     {
         public string name;
         public Gee.Collection< string > commands;
-    }
-
-    private PackageAnalyzer()
-    {
     }
 
     ~PackageAnalyzer()
@@ -75,13 +79,20 @@ public class PackageAnalyzer : Object
     private void* analyze()
     {
         Request? request;
+        var cache = new Gee.HashMap< PackageAnalyzer.Request, PackageAnalyzer.Result >( PackageAnalyzer.Request.hash, PackageAnalyzer.Request.equal );
         while( ( request = poll_next_request() ) != null )
         {
-            var package_info = new Result();
-            package_info.name = request.package_name;
-            dispose_request( package_info, request.path );
+            Result? package_info = cache[ request ];
+            bool cache_hit = package_info != null;
+            if( !cache_hit )
+            {
+                package_info = new Result();
+                package_info.name = request.package_name;
+                dispose_request( package_info, request.path );
+                cache[ request ] = package_info;
+            }
             dispose_package( package_info, request );
-            Thread.usleep( (ulong) 1e5 );
+            if( !cache_hit ) Thread.usleep( (ulong) 1e5 );
         }
         lock( mutex )
         {
@@ -90,12 +101,13 @@ public class PackageAnalyzer : Object
         return null;
     }
 
-    private static void dispose_package( Result package_info, Request request )
+    private void dispose_package( Result package_info, Request request )
     {
         /* Schedule one-time call-back (return false).
          */
         Idle.add( () =>
             {
+                done( request, package_info );
                 request.done( package_info );
                 return false;
             }

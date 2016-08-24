@@ -320,7 +320,7 @@ namespace SourceStructure
             var request = new PackageAnalyzer.Request( package_name, current_dir_path );
             weak UsePackageNode weak_this = this;
             request.done.connect( weak_this.update_package_info );
-            PackageAnalyzer.instance.enqueue( request );
+            CachedPackageAnalyzer.instance.enqueue( request );
         }
 
         private void update_package_info( PackageAnalyzer.Result package_info )
