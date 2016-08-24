@@ -47,6 +47,7 @@ public class Editor : Gtk.Box
 
     public FeatureCompletionProvider reference_completion_provider { public get; private set; }
     public FeatureCompletionProvider bib_entry_completion_provider { public get; private set; }
+    public CommandCompletionProvider   command_completion_provider { public get; private set; }
 
     #if DEBUG
     public static uint _debug_instance_counter = 0;
@@ -72,6 +73,7 @@ public class Editor : Gtk.Box
 
         this.reference_completion_provider = new FeatureCompletionProvider( this, SourceStructure.Feature.LABEL    , "ref" , "Labels"     );
         this.bib_entry_completion_provider = new FeatureCompletionProvider( this, SourceStructure.Feature.BIB_ENTRY, "cite", "References" );
+        this.  command_completion_provider = new CommandCompletionProvider( this );
     }
 
     ~Editor()

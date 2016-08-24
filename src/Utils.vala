@@ -76,4 +76,51 @@ namespace Utils
         else return false;
     }
 
+    /**
+     * Finds the first occasion of a file, whose name matches the `filename_pattern`, or `null`, if no such file exists.
+     *
+     * Also returns `null` if `base_dir_path` does not exist or doesn't refer to a readable directory.
+     */
+    public string? find_file( string base_dir_path, Regex filename_pattern, bool recursive )
+    {
+        try
+        {
+            Dir dir = Dir.open( base_dir_path, 0 );
+            unowned string? filename;
+            while( ( filename = dir.read_name() ) != null )
+            {
+                var entry  = Path.build_path( Path.DIR_SEPARATOR_S, base_dir_path, filename );
+                var is_dir = FileUtils.test( entry, FileTest.IS_DIR );
+                var inner_result = is_dir && recursive ? find_file( entry, filename_pattern, recursive ) : null;
+                if( inner_result == null )
+                {
+                    MatchInfo match;
+                    filename_pattern.match( filename, 0, out match );
+                    if( match.matches() ) return entry;
+                }
+                else return inner_result;
+            }
+            return null;
+        }
+        catch( FileError err )
+        {
+            warning( "Failed to read directory: %s\n", base_dir_path );
+            return null;
+        }
+    }
+
+    public string read_text_file( File file )
+    {
+        bool first_line = true;
+        string line;
+        var data  = new StringBuilder();
+        var input = new DataInputStream( file.read() );
+        while( ( line = input.read_line( null ) ) != null )
+        {
+            data.append( ( first_line ? "%s" : "\n%s" ).printf( line ) );
+            first_line = false;
+        }
+        return data.str;
+    }
+
 }

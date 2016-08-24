@@ -96,6 +96,14 @@ public class SourceFileView : Gtk.ScrolledWindow
             partition_root.add_child( ref_node );
             ref_node.resolve();
         }
+
+        private void handle_package_reference( string package_name )
+        {
+            if( package_name.length < 2 ) return;
+            var pkg_node = new SourceStructure.UsePackageNode( view, package_name );
+            partition_root.add_child( pkg_node );
+            pkg_node.update( true );
+        }
        
         /**
          * Rebuilds the source structure graph of this partition.
@@ -112,8 +120,10 @@ public class SourceFileView : Gtk.ScrolledWindow
             }
             if( view.mode == Mode.UNKNOWN || view.mode == Mode.LATEX )
             {
-                analyzer.find_labels         ( text, create_leafs( SourceStructure.Feature.LABEL ) );
-                analyzer.find_file_references( text, handle_file_reference );
+                analyzer.find_labels            ( text, create_leafs( SourceStructure.Feature.LABEL   ) );
+                analyzer.find_commands          ( text, create_leafs( SourceStructure.Feature.COMMAND ) );
+                analyzer.find_file_references   ( text, handle_file_reference );
+                analyzer.find_package_references( text, handle_package_reference );
             }
         }
 
@@ -170,6 +180,7 @@ public class SourceFileView : Gtk.ScrolledWindow
         partitioning = new SourcePartitioning( buffer, () => { return new Partition( this ); } );
         text_view.get_completion().add_provider( editor.reference_completion_provider );
         text_view.get_completion().add_provider( editor.bib_entry_completion_provider );
+        text_view.get_completion().add_provider( editor.  command_completion_provider );
 
         this.add( text_view );
         this.grab_focus.connect_after( () => { text_view.grab_focus(); } );

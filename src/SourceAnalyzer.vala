@@ -4,10 +4,13 @@ public class SourceAnalyzer : Object
     private static Once< SourceAnalyzer > _instance;
     public  static SourceAnalyzer instance { get { return _instance.once( () => { return new SourceAnalyzer(); } ); } }
 
-    private Regex   include_pattern;
-    private Regex     input_pattern;
-    private Regex     label_pattern;
-    private Regex bib_entry_pattern;
+    private Regex    include_pattern;
+    private Regex      input_pattern;
+    private Regex      label_pattern;
+    private Regex usepackage_pattern;
+    private Regex  bib_entry_pattern;
+    private Regex newcommand_pattern;
+    private Regex        def_pattern;
 
     /**
      * Creates a new pattern, which matches single-parameter commands, that are written on a single line.
@@ -21,10 +24,13 @@ public class SourceAnalyzer : Object
     {
         try
         {
-              include_pattern = create_simple_command_pattern( "include" );
-                input_pattern = create_simple_command_pattern(   "input" );
-                label_pattern = create_simple_command_pattern(   "label" );
-            bib_entry_pattern = new Regex( """[^\\/]*@[a-z]{3,}{ *([A-Za-z0-9_:]+)""", RegexCompileFlags.ANCHORED );
+               include_pattern = create_simple_command_pattern(    "include" );
+                 input_pattern = create_simple_command_pattern(      "input" );
+                 label_pattern = create_simple_command_pattern(      "label" );
+            usepackage_pattern = create_simple_command_pattern( "usepackage" );
+             bib_entry_pattern = new Regex( """[^\\/]*@[a-z]{3,}{ *([A-Za-z0-9_:]+)""", RegexCompileFlags.ANCHORED );
+            newcommand_pattern = new Regex( """[^%]*\\(?:re)?newcommand{\\([A-Za-z0-9_:]+)}""", RegexCompileFlags.ANCHORED );
+                   def_pattern = new Regex( """[^%]*\\def\\([A-Za-z0-9_:]+)""", RegexCompileFlags.ANCHORED );
         }
         catch( RegexError err )
         {
@@ -66,6 +72,17 @@ public class SourceAnalyzer : Object
     public void find_bib_entries( string source, StringHandler handle )
     {
         find_single_line_pattern( source, handle, bib_entry_pattern );
+    }
+
+    public void find_commands( string source, StringHandler handle )
+    {
+        find_single_line_pattern( source, handle, newcommand_pattern );
+        find_single_line_pattern( source, handle,        def_pattern );
+    }
+
+    public void find_package_references( string source, StringHandler handle )
+    {
+        find_single_line_pattern( source, handle, usepackage_pattern );
     }
 
     private static const string TEX_SUFFIX = ".tex";

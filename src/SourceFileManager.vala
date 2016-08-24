@@ -67,16 +67,7 @@ public class SourceFileManager
                 }
                 else
                 {
-                    bool first_line = true;
-                    string line;
-                    var data  = new StringBuilder();
-                    var input = new DataInputStream( file.read() );
-                    while( ( line = input.read_line( null ) ) != null )
-                    {
-                        data.append( ( first_line ? "%s" : "\n%s" ).printf( line ) );
-                        first_line = false;
-                    }
-                    contents = data.str;
+                    contents = Utils.read_text_file( file );
                 }
             }
             hash = contents.hash();

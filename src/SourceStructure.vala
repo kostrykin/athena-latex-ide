@@ -1,7 +1,7 @@
 namespace SourceStructure
 {
 
-    public enum Feature { LABEL, BIB_ENTRY }
+    public enum Feature { LABEL, BIB_ENTRY, COMMAND }
     public enum SearchResult { ALL_VISITED, CANCELED, ALREADY_VISITED }
 
     public class Node : Object
@@ -287,6 +287,58 @@ namespace SourceStructure
                 return resolution.node.search_feature( feature, visit, visited );
             }
             else return base_result;
+        }
+    }
+
+    public class UsePackageNode : Node
+    {
+        private static Gee.Collection< string > EMPTY_COMMANDS_LIST = new Gee.ArrayList< string >();
+        private weak SourceFileManager.SourceFile file;
+        private string? current_dir_path;
+        private string  package_name;
+        private PackageAnalyzer.Result? package_info;
+
+        public UsePackageNode( SourceFileView view, string package_name )
+            requires( package_name.length > 0 )
+        {
+            base();
+            this.file = view.file;
+            this.package_name = package_name;
+
+            features[ Feature.COMMAND ] = ""; // ensurs this node is found when graph is searched for `Feature.COMMAND` nodes
+
+            weak UsePackageNode weak_this = this;
+            view.editor.file_saved.connect( weak_this.handle_file_saved );
+        }
+
+        public void update( bool force = false )
+        {
+            string? dir_path = file.path != null ? Path.get_dirname( file.path ) : null;
+            if( dir_path == current_dir_path && !force ) return;
+            current_dir_path = dir_path;
+
+            var request = new PackageAnalyzer.Request( package_name, current_dir_path );
+            weak UsePackageNode weak_this = this;
+            request.done.connect( weak_this.update_package_info );
+            PackageAnalyzer.instance.enqueue( request );
+        }
+
+        private void update_package_info( PackageAnalyzer.Result package_info )
+        {
+            this.package_info = package_info;
+        }
+
+        private void handle_file_saved( SourceFileManager.SourceFile file )
+        {
+            if( file == this.file ) update();
+        }
+
+        public Gee.Collection< string > commands
+        {
+            get
+            {
+                return package_info != null ? package_info.commands : EMPTY_COMMANDS_LIST;
+            }
         }
     }
 

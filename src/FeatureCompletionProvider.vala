@@ -23,6 +23,7 @@ public class FeatureCompletionProvider: Object, Gtk.SourceCompletionProvider
 
     public FeatureCompletionProvider( Editor editor, SourceStructure.Feature feature, string match_command, string name )
     {
+        this.name = name;
         this.editor = editor;
         this.feature = feature;
         this.match_command = match_command;
