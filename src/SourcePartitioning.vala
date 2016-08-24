@@ -76,8 +76,8 @@ public class SourcePartitioning
             {
                 var mark = affected_marks[ i ];
                 marks.remove( mark.line, mark );
-                mark.line += lines;
-                marks[ mark.line ] = mark;
+                mark.line = Utils.max( 0, mark.line + lines );
+                marks.@set( mark.line, mark );
             }
         }
     }
@@ -170,7 +170,7 @@ public class SourcePartitioning
         int invalidated_partitions_count = 0;
         foreach( var p in partitions )
         {
-            if( p.start.line <= first_affected_line && p.start.line + affected_line_count <= p.end.line )
+            if( p.start.line <= first_affected_line && first_affected_line + affected_line_count <= p.end.line )
             {
                 invalidated_partitions[ invalidated_partitions_count++ ] = p;
             }
@@ -205,6 +205,7 @@ public class SourcePartitioning
             /* Since only one line was affected,
              * also exactly one partition was invalidated.
              */
+            assert( invalidated_partitions_count == 1 );
             invalidated_partitions[ 0 ].update();
         }
     }
@@ -243,16 +244,15 @@ public class SourcePartitioning
         while( p1_iter.next() )
         {
             Partition p1 = p1_iter.@get();
-
             if( p0.line_count + p1.line_count <= MAX_LINES_PER_PARTITION_AFTER_MERGE )
             {
+                marks.remove( p0.end.line, p0.end );
                 p0.end = p1.end;
                 p0.merge( p1 );
                 p1_iter.remove();
                 partitions_to_update.remove( p1 );
             }
-
-            p0 = p1;
+            else p0 = p1;
         }
     }
 
