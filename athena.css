@@ -67,3 +67,9 @@ SettingsDialog .description {
   padding-left: 15px;
 }
 
+* {
+    -GtkDialog-action-area-border: 12px;
+    /*-GtkDialog-button-spacing: 10px;*/
+    -GtkDialog-content-area-border: 0;
+}
+

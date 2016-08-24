@@ -8,18 +8,15 @@ public class Athena : Granite.Application
         app_years      = "2016";
         
         build_version = "0.1";
-        app_icon      = "athena";
-        main_url      = "https://launchpad.net/granite";
-        bug_url       = "https://bugs.launchpad.net/granite";
-        help_url      = "https://answers.launchpad.net/granite";
-        translate_url = "https://translations.launchpad.net/granite";
+        //app_icon      = "athena";
+        main_url      = "https://guthub.com/kostrykin/athena";
+        bug_url       = "https://github.com/kostrykin/athena/issues";
         about_authors = {
             "Leonid Kostrykin <void@evoid.de>", null
         };
 
         about_comments     = "Streamlined LaTeX IDE";
-        about_translators  = "Launchpad Translators";
-        about_license_type = Gtk.License.GPL_2_0;
+        about_license_type = Gtk.License.GPL_3_0;
     }
 
     public Settings settings { get; private set; }
