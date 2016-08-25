@@ -1,6 +1,9 @@
 /*
  *  Copyright (C) 2011-2013 Lucas Baudin <xapantu@gmail.com>
  *
+ *  Most of this file are part of Granite 0.3.1.
+ *  Modifications were added by Leonid Kostrykin <void@evoid.de>
+ *
  *  This program or library is free software; you can redistribute it
  *  and/or modify it under the terms of the GNU Lesser General Public
  *  License as published by the Free Software Foundation; either
@@ -17,11 +20,11 @@
  *  Boston, MA 02110-1301 USA.
  */
 
-/**
- * This class is a wrapper to run an async command. It provides useful signals.
+/*
+ *  This class is a wrapper to run an async command. It provides useful signals.
  *
- * This class is forked from Granite 0.3.1. It fixes the following bug:
- * https://bugs.launchpad.net/granite/+bug/1612266
+ *  This class is forked from Granite 0.3.1. It fixes the following bug:
+ *  https://bugs.launchpad.net/granite/+bug/1612266
  */
 public class SimpleCommand : GLib.Object
 {

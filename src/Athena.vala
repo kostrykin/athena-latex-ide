@@ -9,13 +9,14 @@ public class Athena : Granite.Application
         
         build_version = "0.1";
         //app_icon      = "athena";
-        main_url      = "https://guthub.com/kostrykin/athena";
+        main_url      = "https://github.com/kostrykin/athena";
         bug_url       = "https://github.com/kostrykin/athena/issues";
         about_authors = {
             "Leonid Kostrykin <void@evoid.de>", null
         };
 
         about_comments     = "Streamlined LaTeX IDE";
+        about_license      = "GNU GPL 3.0";
         about_license_type = Gtk.License.GPL_3_0;
     }
 
@@ -56,6 +57,13 @@ public class Athena : Granite.Application
         var window = new MainWindow( this );
         window.destroy.connect( Gtk.main_quit );
         window.show_all();
+    }
+
+    public override void show_about( Gtk.Widget parent )
+    {
+        var dlg = new AboutDialog( parent as Gtk.Window );
+        dlg.run();
+        dlg.destroy();
     }
 
     #if DEBUG

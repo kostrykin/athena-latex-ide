@@ -6,7 +6,7 @@ ensure_vala_version("0.11.3" MINIMUM)
 include(ValaPrecompile)
 
 find_package(PkgConfig)
-pkg_check_modules(DEPS REQUIRED gtk+-3.0 gtksourceview-3.0 granite poppler-glib libxml-2.0)
+pkg_check_modules(DEPS REQUIRED gtk+-3.0 gtksourceview-3.0 granite poppler-glib libxml-2.0 posix)
 
 set(CFLAGS ${DEPS_CFLAGS} ${DEPS_CFLAGS_OTHER})
 set(LIB_PATHS ${DEPS_LIBRARY_DIRS})
@@ -27,7 +27,7 @@ add_definitions(${CFLAGS} -Wno-deprecated-declarations)
 
 vala_precompile(
     VALA_C ${VALA_SRC}
-    PACKAGES gtk+-3.0 gtksourceview-3.0 granite poppler-glib libxml-2.0
+    PACKAGES gtk+-3.0 gtksourceview-3.0 granite poppler-glib libxml-2.0 posix
     OPTIONS --thread --target-glib=2.32
     DEFINITIONS DEBUG
     )
