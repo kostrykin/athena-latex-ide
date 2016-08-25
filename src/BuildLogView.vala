@@ -6,8 +6,13 @@ public class BuildLogView : Gtk.Popover
     private static Gtk.Image ICON_SUCCESS;
     private static Gtk.Image ICON_FAILURE;
 
+    private static Pango.FontDescription DEFAULT_FONT;
+
     static construct
     {
+        string font_name = new GLib.Settings( "org.gnome.desktop.interface" ).get_string( "monospace-font-name" );
+        DEFAULT_FONT = Pango.FontDescription.from_string( font_name );
+
         ICON_PREV_COMMAND = new Gtk.Image.from_icon_name( "go-previous-symbolic"      , MainWindow.TOOLBAR_ICON_SIZE );
         ICON_NEXT_COMMAND = new Gtk.Image.from_icon_name( "go-next-symbolic"          , MainWindow.TOOLBAR_ICON_SIZE );
         ICON_SUCCESS      = new Gtk.Image.from_icon_name( "process-completed-symbolic", MainWindow.TOOLBAR_ICON_SIZE );
@@ -124,6 +129,9 @@ public class BuildLogView : Gtk.Popover
         var scrolled_window = new Gtk.ScrolledWindow( null, null );
         var text_view = new Gtk.TextView.with_buffer( buffer );
         text_view.editable = false;
+        text_view.override_font( DEFAULT_FONT );
+        //text_view.wrap_mode = Gtk.WrapMode.NONE; // FIXME: add horizontal scroll bar
+        //scrolled_window.set_policy( Gtk.PolicyType.ALWAYS, Gtk.PolicyType.AUTOMATIC );
         scrolled_window.add( text_view );
         scrolled_window.show_all();
         scrolled_window.get_vadjustment().changed.connect( scroll_to_bottom );

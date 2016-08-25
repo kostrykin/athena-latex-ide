@@ -1,13 +1,14 @@
 public class BuildManager
 {
 
+    public static const string COMMAND_INIT    = "init-build";
     public static const string COMMAND_PREVIEW = "preview";
 
     public static const string MODE_FULL  = "full";
     public static const string MODE_QUICK = "quick";
 
     public static const string VAR_INPUT      = "INPUT";        ///< e.g. `/path/file.tex`
-    public static const string VAR_INPUT_NAME = "INPUT_NAME";   ///< e.g. `/path/file`
+    public static const string VAR_INPUT_NAME = "INPUT_NAME";   ///< e.g. `file`
     public static const string VAR_OUTPUT     = "OUTPUT";       ///< e.g. `/path/.build/file
     public static const string VAR_BUILD_DIR  = "BUILD_DIR";    ///< e.g. `/path/.build`
 
@@ -15,8 +16,9 @@ public class BuildManager
 
     public BuildManager()
     {
-        const string latex_cmds [] = { "pdflatex"     , "lualatex", "xetex" };
-        const string build_names[] = { "Default LaTeX", "LuaLaTeX", "XeTeX" };
+        const string latex_cmds [] = { "pdflatex"     , "pdflatex"              , "lualatex", "lualatex"         , "xetex", "xetex         " };
+        const bool   bibtex_on  [] = {  false         ,  true                   ,  false    ,  true              ,  false ,  true            };
+        const string build_names[] = { "Default LaTeX", "Default LaTeX + BibTeX", "LuaLaTeX", "LuaLaTeX + BibTeX", "XeTeX", "XeTeX + BibTeX" };
         for( int idx = 0; idx < latex_cmds.length; ++idx )
         {
             var latex_cmd = latex_cmds[ idx ];
@@ -29,15 +31,31 @@ public class BuildManager
              *  4. tex to pdf -- updates citations in text
              */
             build_types[ build_names[ idx ] ] = new CommandSequence.from_string(
+
                 """
-                mkdir -p "$BUILD_DIR"
-                %s --output-directory "$BUILD_DIR" --synctex=1 "$INPUT"
-                %s: bibtex "$OUTPUT.aux"
-                %s: %s -output-directory "$BUILD_DIR" "$INPUT"
-                %s: %s -output-directory "$BUILD_DIR" "$INPUT"
                 %s
-                ln --force "$OUTPUT.pdf" "$INPUT_NAME.pdf"
-                """.printf( latex_cmd, MODE_FULL, MODE_FULL, latex_cmd, MODE_FULL, latex_cmd, COMMAND_PREVIEW ) );
+                %s: %s --output-directory "$BUILD_DIR" --synctex=1 "$INPUT"
+                %s: %s --output-directory "$BUILD_DIR" "$INPUT"
+                """
+                .printf( COMMAND_INIT, MODE_QUICK, latex_cmd, MODE_FULL, latex_cmd )
+
+                + ( bibtex_on[ idx ]
+                ?
+                    """
+                    %s: bibtex -terse "$INPUT_NAME.aux"
+                    %s: %s -output-directory "$BUILD_DIR" "$INPUT"
+                    """
+                    .printf( MODE_FULL, MODE_FULL, latex_cmd )
+                :
+                    ""
+                ) +
+
+                """
+                %s: %s -output-directory "$BUILD_DIR" --synctex=1 "$INPUT"
+                %s
+                ln --force "$OUTPUT.pdf" "../$INPUT_NAME.pdf"
+                """
+                .printf( MODE_FULL, latex_cmd, COMMAND_PREVIEW ) );
         }
     }
 
@@ -79,13 +97,14 @@ public class BuildManager
         var  build_dir = Path.build_path( Path.DIR_SEPARATOR_S, base_dir, ".build" + Path.DIR_SEPARATOR_S );
         var input_name = get_input_name( input.path );
         var     output = get_output( input_name, build_dir );
-        var    context = new CommandContext( base_dir );
+        var    context = new CommandContext( build_dir );
 
         context.variables[      VAR_INPUT ] = input.path;
         context.variables[ VAR_INPUT_NAME ] = input_name;
         context.variables[  VAR_BUILD_DIR ] = build_dir;
         context.variables[     VAR_OUTPUT ] = output;
 
+        context.special_commands.add( COMMAND_INIT    );
         context.special_commands.add( COMMAND_PREVIEW );
         return context;
     }

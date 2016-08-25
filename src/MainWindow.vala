@@ -625,7 +625,7 @@ public class MainWindow : Gtk.Window
             current_build.batch.step.connect( update_build_info );
             current_build.batch.done.connect( ( build, result ) => { exit_build( mode, result == 0 ); } );
             current_build.batch.stdout_changed.connect( append_build_log );
-            current_build.batch.special_command.connect( handle_special_command );
+            current_build.batch.special_command.connect( ( build, command ) => { handle_special_command( build, command, context ); } );
             current_build.source_file_path = editor.current_file.path;
             current_build.source_file_line = editor.current_file_line;
             current_build.batch.start();
@@ -640,10 +640,14 @@ public class MainWindow : Gtk.Window
         build_log.add_step_output( build_log.current_position, text );
     }
 
-    private void handle_special_command( CommandSequence.Run build, string command )
+    private void handle_special_command( CommandSequence.Run build, string command, CommandContext context )
     {
         switch( command )
         {
+
+            case BuildManager.COMMAND_INIT:
+                init_build( build, context );
+                break;
 
             case BuildManager.COMMAND_PREVIEW:
                 update_preview();
@@ -652,6 +656,15 @@ public class MainWindow : Gtk.Window
             default:
                 assert_not_reached();
         }
+    }
+
+    private void init_build( CommandSequence.Run build, CommandContext context )
+    {
+        DirUtils.create_with_parents( build.dir, 493 ); // 493 is 755 in octal
+        int longest_key = 0;
+        foreach( var key in context.variables.keys ) longest_key = Utils.max( longest_key, key.length );
+        var format = "%" + longest_key.to_string() + "s = %s\n";
+        foreach( var key in context.variables.keys ) append_build_log( build, format.printf( key, context.variables[ key ] ) );
     }
 
     private void update_preview()
