@@ -124,7 +124,7 @@ public class PackageAnalyzer : Object
     {
         var filename_pattern = create_package_file_name_pattern( package_info.name );
         string? file_path = null;
-        string base_dir_paths[] = { path, "/usr/share/texlive/texmf-dist/tex" };
+        string base_dir_paths[] = { path, "/usr/share/texlive/texmf-dist/tex", "/usr/share/texmf/tex/latex" };
 
         for( int i = 0; file_path == null && i < base_dir_paths.length; ++i )
         {

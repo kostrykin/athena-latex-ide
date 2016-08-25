@@ -6,9 +6,10 @@ public class BuildManager
     public static const string MODE_FULL  = "full";
     public static const string MODE_QUICK = "quick";
 
-    public static const string VAR_INPUT     = "INPUT";
-    public static const string VAR_OUTPUT    = "OUTPUT";
-    public static const string VAR_BUILD_DIR = "BUILD_DIR";
+    public static const string VAR_INPUT      = "INPUT";        ///< e.g. `/path/file.tex`
+    public static const string VAR_INPUT_NAME = "INPUT_NAME";   ///< e.g. `/path/file`
+    public static const string VAR_OUTPUT     = "OUTPUT";       ///< e.g. `/path/.build/file
+    public static const string VAR_BUILD_DIR  = "BUILD_DIR";    ///< e.g. `/path/.build`
 
     private Gee.Map< string, CommandSequence > build_types = new Gee.TreeMap< string, CommandSequence >();
 
@@ -32,10 +33,11 @@ public class BuildManager
                 mkdir -p "$BUILD_DIR"
                 %s --output-directory "$BUILD_DIR" --synctex=1 "$INPUT"
                 %s: bibtex "$OUTPUT.aux"
-                %s: $latex_cmd -output-directory "$BUILD_DIR" "$INPUT"
-                %s: $latex_cmd -output-directory "$BUILD_DIR" "$INPUT"
+                %s: %s -output-directory "$BUILD_DIR" "$INPUT"
+                %s: %s -output-directory "$BUILD_DIR" "$INPUT"
                 %s
-                """.printf( latex_cmd, MODE_FULL, MODE_FULL, MODE_FULL, COMMAND_PREVIEW ) );
+                ln --force "$OUTPUT.pdf" "$INPUT_NAME.pdf"
+                """.printf( latex_cmd, MODE_FULL, MODE_FULL, latex_cmd, MODE_FULL, latex_cmd, COMMAND_PREVIEW ) );
         }
     }
 
@@ -54,7 +56,7 @@ public class BuildManager
         return build_types[ name ];
     }
 
-    private string get_output( string input_path, string build_dir )
+    private string get_input_name( string input_path )
     {
         var basename = Path.get_basename( input_path );
         var n = basename.last_index_of_char( '.' );
@@ -62,19 +64,28 @@ public class BuildManager
         {
             n = basename.length;
         }
-        return Path.build_path( Path.DIR_SEPARATOR_S, build_dir, n > -1 ? basename[ 0 : n ] : basename );
+        return n > -1 ? basename[ 0 : n ] : basename;
+    }
+
+    private string get_output( string input_name, string build_dir )
+    {
+        return Path.build_path( Path.DIR_SEPARATOR_S, build_dir, input_name );
     }
 
     public CommandContext create_build_context( SourceFileManager.SourceFile input )
         requires( !Path.get_basename( input.path ).has_prefix( "." ) ) // TODO: warn user that files starting with "." cannot be built
     {
-        var  base_dir = Path.get_dirname( input.path );
-        var build_dir = Path.build_path( Path.DIR_SEPARATOR_S, base_dir, ".build" + Path.DIR_SEPARATOR_S );
-        var    output = get_output( input.path, build_dir );
-        var   context = new CommandContext( base_dir );
-        context.variables[     VAR_INPUT ] = input.path;
-        context.variables[ VAR_BUILD_DIR ] = build_dir;
-        context.variables[    VAR_OUTPUT ] = output;
+        var   base_dir = Path.get_dirname( input.path );
+        var  build_dir = Path.build_path( Path.DIR_SEPARATOR_S, base_dir, ".build" + Path.DIR_SEPARATOR_S );
+        var input_name = get_input_name( input.path );
+        var     output = get_output( input_name, build_dir );
+        var    context = new CommandContext( base_dir );
+
+        context.variables[      VAR_INPUT ] = input.path;
+        context.variables[ VAR_INPUT_NAME ] = input_name;
+        context.variables[  VAR_BUILD_DIR ] = build_dir;
+        context.variables[     VAR_OUTPUT ] = output;
+
         context.special_commands.add( COMMAND_PREVIEW );
         return context;
     }

@@ -18,7 +18,7 @@ public class SourceAnalyzer : Object
      */
     private static Regex create_simple_command_pattern( string command ) throws RegexError
     {
-        return new Regex( """[^%]*\\%s{([A-Za-z0-9_:]+)}""".printf( command ), RegexCompileFlags.ANCHORED );
+        return new Regex( """[^%]*\\%s(?:\[[^\]]*\])?{([A-Za-z0-9_:]+)}""".printf( command ), RegexCompileFlags.ANCHORED );
     }
 
     private SourceAnalyzer()
