@@ -23,7 +23,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(DEBUG "DEBUG")
 endif()
 
-add_definitions(${CFLAGS} -Wno-deprecated-declarations -DINSTALL_PREFIX="${CMAKE_INSTALL_PREFIX}")
+add_definitions(${CFLAGS} -Wno-deprecated-declarations -DINSTALL_PREFIX="${CMAKE_INSTALL_PREFIX}" -DVERSION="${VERSION}")
 
 vala_precompile(
     VALA_C ${VALA_SRC}

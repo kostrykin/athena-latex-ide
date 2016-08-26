@@ -7,7 +7,7 @@ public class Athena : Granite.Application
         program_name   = "Athena";
         app_years      = "2016";
         
-        build_version = "0.1";
+        build_version =  Utils.get_version();
         app_icon      = "athena-latex-ide";
         main_url      = "https://github.com/kostrykin/athena";
         bug_url       = "https://github.com/kostrykin/athena/issues";

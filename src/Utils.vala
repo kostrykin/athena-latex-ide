@@ -123,8 +123,6 @@ namespace Utils
         return data.str;
     }
 
-    extern unowned string get_install_prefix();
-
     public string? find_asset( string asset_name )
     {
         var pattern = new Regex( Regex.escape_string( asset_name ) );
@@ -141,5 +139,9 @@ namespace Utils
         warning( "Couldn't find asset: %s", asset_name );
         return null;
     }
+
+    extern unowned string get_install_prefix();
+
+    extern unowned string get_version();
 
 }
