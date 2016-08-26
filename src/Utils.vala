@@ -123,4 +123,23 @@ namespace Utils
         return data.str;
     }
 
+    extern unowned string get_install_prefix();
+
+    public string? find_asset( string asset_name )
+    {
+        var pattern = new Regex( Regex.escape_string( asset_name ) );
+        var assets_dir = Path.build_path( Path.DIR_SEPARATOR_S, Environment.get_current_dir(), "assets" );
+        string[] search_dirs = { assets_dir, Path.build_path( Path.DIR_SEPARATOR_S, get_install_prefix(), "share/athena-latex-ide" ) };
+
+        foreach( string search_dir in search_dirs )
+        {
+            if( !FileUtils.test( search_dir, FileTest.IS_DIR | FileTest.EXISTS ) ) continue;
+            var result = find_file( search_dir, pattern, true );
+            if( result != null ) return result;
+        }
+
+        warning( "Couldn't find asset: %s", asset_name );
+        return null;
+    }
+
 }

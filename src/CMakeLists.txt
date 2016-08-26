@@ -6,7 +6,7 @@ ensure_vala_version("0.11.3" MINIMUM)
 include(ValaPrecompile)
 
 find_package(PkgConfig)
-pkg_check_modules(DEPS REQUIRED gtk+-3.0 gtksourceview-3.0 granite poppler-glib libxml-2.0 posix)
+pkg_check_modules(DEPS REQUIRED gtk+-3.0 gtksourceview-3.0 granite poppler-glib libxml-2.0)
 
 set(CFLAGS ${DEPS_CFLAGS} ${DEPS_CFLAGS_OTHER})
 set(LIB_PATHS ${DEPS_LIBRARY_DIRS})
@@ -23,7 +23,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(DEBUG "DEBUG")
 endif()
 
-add_definitions(${CFLAGS} -Wno-deprecated-declarations)
+add_definitions(${CFLAGS} -Wno-deprecated-declarations -DINSTALL_PREFIX="${CMAKE_INSTALL_PREFIX}")
 
 vala_precompile(
     VALA_C ${VALA_SRC}
@@ -34,6 +34,7 @@ vala_precompile(
 
 file(GLOB SYNCTEX_SRC_ABS ../lib/synctex/*.c)
 include_directories(../lib/synctex)
-add_executable(athena ${VALA_C} ${SYNCTEX_SRC_ABS})
-target_link_libraries(athena ${DEPS_LIBRARIES} m z)
+add_executable(athena-latex-ide ${VALA_C} ${SYNCTEX_SRC_ABS} config.c)
+target_link_libraries(athena-latex-ide ${DEPS_LIBRARIES} m z)
+install(TARGETS athena-latex-ide DESTINATION bin)
 

@@ -1,4 +1,4 @@
 *.o
 /build
-/athena
+/athena-latex-ide
 *.swp

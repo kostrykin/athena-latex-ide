@@ -15,6 +15,6 @@ mkdir -p build
 cd build
 cmake .. $CMAKE_BUILD_TYPE
 make
-cp src/athena ../
+cp src/athena-latex-ide ../
 
 echo -e "\nBuild finished \033[1;32msuccessfully.\033[0m\n"

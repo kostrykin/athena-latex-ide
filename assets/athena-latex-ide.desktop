@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Athena LaTeX IDE
+Comment=Streamlined LaTeX Writing Environment
+Exec=athena-latex-ide
+Icon=athena-latex-ide
+Terminal=false
+Type=Application
+MimeType=text/x-tex;
+Categories=Office;Publishing;X-SuSE-Core-Office;X-Mandriva-Office-Publishing;X-Misc;

@@ -8,7 +8,7 @@ public class Athena : Granite.Application
         app_years      = "2016";
         
         build_version = "0.1";
-        //app_icon      = "athena";
+        app_icon      = "athena-latex-ide";
         main_url      = "https://github.com/kostrykin/athena";
         bug_url       = "https://github.com/kostrykin/athena/issues";
         about_authors = {
@@ -51,7 +51,7 @@ public class Athena : Granite.Application
     {
         var css    = new Gtk.CssProvider();
         var screen = Gdk.Screen.get_default();
-        css.load_from_path( "athena.css" );
+        css.load_from_path( Utils.find_asset( "athena.css" ) );
         Gtk.StyleContext.add_provider_for_screen( screen, css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION );
 
         var window = new MainWindow( this );
