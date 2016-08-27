@@ -3,7 +3,7 @@ public class Athena : Granite.Application
 
     construct
     {
-        application_id = "simple.granite.org";
+        application_id = "org.kostrykin.athena-latex-ide";
         program_name   = "Athena";
         app_years      = "2016";
         
