@@ -11,11 +11,16 @@ public class MainWindow : Gtk.ApplicationWindow
     private static Gtk.Image ICON_BUILD_SUCCESS;
     private static Gtk.Image ICON_BUILD_FAILURE;
 
+    private static string INTERMEDIATE_SESSION_FILE_PATH;
+
     static construct
     {
         ICON_BUILD_IDLE    = new Gtk.Image.from_icon_name( "radio-symbolic"            , HEADERBAR_ICON_SIZE );
         ICON_BUILD_SUCCESS = new Gtk.Image.from_icon_name( "process-completed-symbolic", HEADERBAR_ICON_SIZE );
         ICON_BUILD_FAILURE = new Gtk.Image.from_icon_name( "process-error-symbolic"    , HEADERBAR_ICON_SIZE );
+
+        var config_path = Granite.Services.Paths.user_config_folder.get_path();
+        INTERMEDIATE_SESSION_FILE_PATH = Path.build_path( Path.DIR_SEPARATOR_S, config_path, "intermediate-session.xml" );
     }
 
     public static const string HOTKEY_QUICK_BUILD = "F1";
@@ -358,43 +363,39 @@ public class MainWindow : Gtk.ApplicationWindow
     public void reload_session()
     {
         reset_session( true ); // this is (a) just to be sure and (b) to suffice the method's name
-        if( !is_session_intermediate )
+        string error = "";
+        Athena.instance.override_cursor( busy_cursor );
+        
+        try
         {
-            string error = "";
-            Athena.instance.override_cursor( busy_cursor );
-
-            try
+            var xml = new SessionXml( editor );
+            xml.read_from( session_file_path );
+            update_preview();
+            build_types_view.active = xml.build_type_position;
+        
+            if( editor.get_source_views().size > 0 )
             {
-                var xml = new SessionXml( editor );
-                xml.read_from( Athena.instance.settings.current_session );
-                update_preview();
-                build_types_view.active = xml.build_type_position;
-
-                if( editor.get_source_views().size > 0 )
-                {
-                    main_stack.set_visible_child_name( MAIN_STACK_EDITOR );
-                    initialize_editor_pane();
-                }
-                else error = "Session contains no files.";
+                main_stack.set_visible_child_name( MAIN_STACK_EDITOR );
+                initialize_editor_pane();
             }
-            catch( XmlError xml_error )
-            {
-                error = xml_error.message;
-            }
-            finally
-            {
-                Athena.instance.restore_cursor();
-            }
-            info( "Reloaded session %s", Athena.instance.settings.current_session );
-
-            if( error.length > 0 )
-            {
-                // TODO: Tell, that loading the session has failed. Ask, whether a new one shall be started, or another one loaded.
-                warning( error );
-                editor.close_all_files( false );
-                start_new_session( false );
-            }
+            else error = "Session contains no files.";
         }
+        catch( XmlError xml_error )
+        {
+            error = xml_error.message;
+        }
+        finally
+        {
+            Athena.instance.restore_cursor();
+        }
+        if( error.length > 0 )
+        {
+            // TODO: Tell, that loading the session has failed. Ask, whether a new one shall be started, or another one loaded.
+            warning( "Failed to reload session: %s", error );
+            editor.close_all_files( false );
+            start_new_session( false );
+        }
+        else info( "Reloaded session %s", session_file_path );
     }
 
     public void save_session_as()
@@ -412,17 +413,13 @@ public class MainWindow : Gtk.ApplicationWindow
     {
         var xml = new SessionXml( editor );
         xml.build_type_position = build_types_view.active;
-        if( is_session_intermediate )
-        {
-            // TODO: implement
-        }
-        else
-        {
-            xml.write_to( Athena.instance.settings.current_session );
-        }
+        xml.write_to( session_file_path );
+        info( "Saved session to %s", session_file_path );
     }
 
     public bool is_session_intermediate { get { return Athena.instance.settings.current_session.length == 0; } }
+
+    private string session_file_path { get { return is_session_intermediate ? INTERMEDIATE_SESSION_FILE_PATH : Athena.instance.settings.current_session; } }
 
     private void update_headerbar_title()
     {

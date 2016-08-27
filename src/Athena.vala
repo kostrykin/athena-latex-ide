@@ -132,7 +132,8 @@ public class Athena : Granite.Application
     {
         var app = new Athena();
 
-        Granite.Services.Logger.initialize ( Athena.instance.program_name );
+        Granite.Services.Paths .initialize( "athena-latex-ide", "" );
+        Granite.Services.Logger.initialize( Athena.instance.program_name );
         Granite.Services.Logger.DisplayLevel = Granite.Services.LogLevel.INFO;
 
         var result = app.run( args );
