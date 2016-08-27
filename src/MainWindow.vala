@@ -1,7 +1,7 @@
 using Granite.Widgets;
 
 
-public class MainWindow : Gtk.Window
+public class MainWindow : Gtk.ApplicationWindow
 {
 
     public static Gtk.IconSize   TOOLBAR_ICON_SIZE = Gtk.IconSize.BUTTON;
@@ -84,6 +84,8 @@ public class MainWindow : Gtk.Window
 
     public MainWindow( Athena app )
     {
+        Object( application: app );
+
         #if DEBUG
         ++_debug_instance_counter;
         #endif
@@ -131,13 +133,6 @@ public class MainWindow : Gtk.Window
             {
                 save_session();
                 return !editor.announce_to_close_all_files();
-            }
-        );
-
-        Timeout.add( 0, () =>
-            {
-                reload_session( true );
-                return GLib.Source.REMOVE;
             }
         );
     }
@@ -340,6 +335,7 @@ public class MainWindow : Gtk.Window
         {
             Athena.instance.settings.current_session = "";
             update_headerbar_title();
+            info( "Started new intermediate session" );
         }
     }
 
@@ -359,7 +355,7 @@ public class MainWindow : Gtk.Window
     /**
      * Reloads the current session.
      */
-    private void reload_session( bool starting_up = false )
+    public void reload_session()
     {
         reset_session( true ); // this is (a) just to be sure and (b) to suffice the method's name
         if( !is_session_intermediate )
@@ -377,19 +373,7 @@ public class MainWindow : Gtk.Window
                 if( editor.get_source_views().size > 0 )
                 {
                     main_stack.set_visible_child_name( MAIN_STACK_EDITOR );
-                    if( starting_up )
-                    {
-                        /* For some reason, querying the `build_types_view` location *before* waiting for
-                         * an idle produces wrong results. No idea what the reason might be. Screw Gtk.
-                         */
-                        Idle.add( () =>
-                            {
-                                initialize_editor_pane();
-                                return GLib.Source.REMOVE;
-                            }
-                        );
-                    }
-                    else initialize_editor_pane();
+                    initialize_editor_pane();
                 }
                 else error = "Session contains no files.";
             }
@@ -401,6 +385,7 @@ public class MainWindow : Gtk.Window
             {
                 Athena.instance.restore_cursor();
             }
+            info( "Reloaded session %s", Athena.instance.settings.current_session );
 
             if( error.length > 0 )
             {
@@ -451,7 +436,7 @@ public class MainWindow : Gtk.Window
 
     private void setup_welcome_screen( Athena app )
     {
-        var welcome = new Welcome( app.program_name, "documents & presentations as they are meant to be" );
+        var welcome = new Welcome( "Athena LaTeX IDE", "Choose your start:" );
 
         welcome.append( "document-page-setup", "Start a Project", "Follow a few guided steps to create a new project.");
         welcome.append( "document-new", "New .TeX File", "Start with an empty LaTeX file.");
@@ -559,24 +544,29 @@ public class MainWindow : Gtk.Window
     {
         foreach( var w in editor_dependent_widgets ) w.sensitive = true;
 
+        Athena.process_events();
+
         int pane_position;
         build_types_view.translate_coordinates( pane, 0, 0, out pane_position, null );
         pane.position = pane_position;
-        Idle.add( () =>
-            {
-                int window_width = overlay.get_allocated_width() + side_stack.get_allocated_width(); // `get_allocated_width` misses 100px... -,-
-                side_stack.set_size_request( window_width - pane_position, 200 );
-                return GLib.Source.REMOVE;
-            }
-        );
+
+        Athena.process_events();
+
+        int window_width = overlay.get_allocated_width() + side_stack.get_allocated_width(); // `get_allocated_width` misses 100px... -,-
+        side_stack.set_size_request( window_width - pane_position, 200 );
+    }
+
+    public void open_file( string path )
+    {
+        bool first_file = editor.current_file == null;
+        editor.open_file_from( path );
+        if( first_file ) show_editor();
     }
 
     private void open_new_file()
     {
         editor.open_new_file();
-        side_stack.set_visible_child_name( SIDE_STACK_HELP );
-        main_stack.set_visible_child_name( MAIN_STACK_EDITOR );
-        initialize_editor_pane();
+        show_editor();
     }
 
     private void open_previous()
@@ -586,12 +576,17 @@ public class MainWindow : Gtk.Window
                 if( path != null )
                 {
                     editor.open_file_from( path );
-                    side_stack.set_visible_child_name( SIDE_STACK_HELP );
-                    main_stack.set_visible_child_name( MAIN_STACK_EDITOR );
-                    initialize_editor_pane();
+                    show_editor();
                 }
             }
         );
+    }
+
+    private void show_editor()
+    {
+        update_preview();
+        main_stack.set_visible_child_name( MAIN_STACK_EDITOR );
+        initialize_editor_pane();
     }
 
     public void invoke_build( string mode )
