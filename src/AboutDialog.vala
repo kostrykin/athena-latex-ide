@@ -56,7 +56,7 @@ public class AboutDialog : Gtk.Dialog
 
         screen.program_name       = Athena.instance.program_name;
         screen.version            = Athena.instance.build_version;
-        screen.logo_icon_name     = Athena.instance.app_icon;
+        screen.logo               = new Gdk.Pixbuf.from_file( Utils.find_asset( "logo.png" ) );
         screen.comments           = Athena.instance.about_comments;
         screen.copyright          = "%s %s Developers".printf( Athena.instance.app_years, Athena.instance.program_name );
         screen.website            = Athena.instance.main_url;
