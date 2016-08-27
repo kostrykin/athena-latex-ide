@@ -81,7 +81,7 @@ public class Athena : Granite.Application
         {
             activated = true;
             process_events();
-            window.reload_session();
+            window.reload_session( true );
         }
     }
 

@@ -348,7 +348,7 @@ public class MainWindow : Gtk.ApplicationWindow
     {
         if( !is_session_intermediate ) save_session();
         if( !editor.announce_to_close_all_files() ) return;
-        FileDialog.choose_readable_file_and( ( path ) =>
+        FileDialog.choose_readable_file_and( this, ( path ) =>
             {
                 Athena.instance.settings.current_session = path;
                 update_headerbar_title();
@@ -360,47 +360,71 @@ public class MainWindow : Gtk.ApplicationWindow
     /**
      * Reloads the current session.
      */
-    public void reload_session()
+    public void reload_session( bool allow_empty = false )
     {
         reset_session( true ); // this is (a) just to be sure and (b) to suffice the method's name
-        string error = "";
-        Athena.instance.override_cursor( busy_cursor );
-        
-        try
+
+        if( !is_session_intermediate || FileUtils.test( session_file_path, FileTest.EXISTS ) )
         {
-            var xml = new SessionXml( editor );
-            xml.read_from( session_file_path );
-            update_preview();
-            build_types_view.active = xml.build_type_position;
-        
-            if( editor.get_source_views().size > 0 )
+            string error = "";
+            Athena.instance.override_cursor( busy_cursor );
+            
+            try
             {
-                main_stack.set_visible_child_name( MAIN_STACK_EDITOR );
-                initialize_editor_pane();
+                var xml = new SessionXml( editor );
+                xml.read_from( session_file_path );
+                update_preview();
+                build_types_view.active = xml.build_type_position;
+            
+                if( editor.get_source_views().size > 0 )
+                {
+                    main_stack.set_visible_child_name( MAIN_STACK_EDITOR );
+                    initialize_editor_pane();
+                }
+                else
+                if( !allow_empty ) error = "The session contains no loadable files.";
             }
-            else error = "Session contains no files.";
+            catch( XmlError xml_error )
+            {
+                error = xml_error.message;
+            }
+            finally
+            {
+                Athena.instance.restore_cursor();
+            }
+            if( error.length > 0 )
+            {
+                warning( "Failed to reload session: %s", error );
+                editor.close_all_files( false );
+                start_new_session( false );
+
+                var dlg = new Gtk.MessageDialog(  this
+                                               ,  Gtk.DialogFlags.MODAL
+                                               ,  Gtk.MessageType.ERROR
+                                               ,  Gtk.ButtonsType.NONE
+                                               , "The session could not be loaded." );
+
+                dlg.add_button( "Start New"     , 0 );
+                dlg.add_button( "Load Different", 1 );
+                Utils.apply_dialog_style( dlg );
+
+                dlg.secondary_text = "The reason was: %s\n\nWould you like to load a different session instead?".printf( error );
+                dlg.set_default_response( 1 );
+                dlg.set_transient_for( this );
+
+                var dlg_result = dlg.run();
+                dlg.destroy();
+
+                if( dlg_result == 1 ) load_another_session();
+            }
+            else info( "Reloaded session %s", session_file_path );
         }
-        catch( XmlError xml_error )
-        {
-            error = xml_error.message;
-        }
-        finally
-        {
-            Athena.instance.restore_cursor();
-        }
-        if( error.length > 0 )
-        {
-            // TODO: Tell, that loading the session has failed. Ask, whether a new one shall be started, or another one loaded.
-            warning( "Failed to reload session: %s", error );
-            editor.close_all_files( false );
-            start_new_session( false );
-        }
-        else info( "Reloaded session %s", session_file_path );
+        else info( "Initial intermediate session - There is nothing to reload" );
     }
 
     public void save_session_as()
     {
-        FileDialog.choose_writable_file_and( ( path ) =>
+        FileDialog.choose_writable_file_and( this, ( path ) =>
             {
                 Athena.instance.settings.current_session = path ?? "";
                 update_headerbar_title();
@@ -568,7 +592,7 @@ public class MainWindow : Gtk.ApplicationWindow
 
     private void open_previous()
     {
-        FileDialog.choose_readable_file_and( ( path ) =>
+        FileDialog.choose_readable_file_and( this, ( path ) =>
             {
                 if( path != null )
                 {

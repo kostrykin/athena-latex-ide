@@ -312,7 +312,12 @@ public class Editor : Gtk.Box
 
     public void open_file()
     {
-        FileDialog.choose_readable_file_and( ( path ) => { open_file_from( path ); } );
+        FileDialog.choose_readable_file_and( get_dialog_parent(), ( path ) => { open_file_from( path ); } );
+    }
+
+    private Gtk.Window get_dialog_parent()
+    {
+        return get_toplevel() as Gtk.Window;
     }
 
     public SourceFileManager.SourceFile open_file_from( string? path ) // FIXME: what happens if `path` can't be opened?
@@ -421,7 +426,7 @@ public class Editor : Gtk.Box
     public bool save_current_file_as()
     {
         bool result = false;
-        FileDialog.choose_writable_file_and( ( path ) =>
+        FileDialog.choose_writable_file_and( get_dialog_parent(), ( path ) =>
             {
                 var position = session.files.find_position( path );
                 if( position < 0 )
@@ -482,14 +487,14 @@ public class Editor : Gtk.Box
     {
         if( current_file.has_flags( Session.FLAGS_MODIFIED ) )
         {
-            var dlg = new Gtk.MessageDialog(  get_toplevel() as Gtk.Window
+            var dlg = new Gtk.MessageDialog(  get_dialog_parent()
                                            ,  Gtk.DialogFlags.MODAL
                                            ,  Gtk.MessageType.QUESTION
                                            ,  Gtk.ButtonsType.NONE
                                            , "This file is going to be closed." );
 
             dlg.add_button( "Reset Changes", 1 );
-            dlg.add_button( "Cancel"       , 2 ).get_style_context().add_class( "primary" );
+            dlg.add_button( "Cancel"       , 2 );
             dlg.add_button( "Save"         , 0 );
             Utils.apply_dialog_style( dlg );
 

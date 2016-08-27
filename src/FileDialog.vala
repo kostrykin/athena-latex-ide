@@ -25,28 +25,30 @@ class FileDialog : Gtk.FileChooserDialog
 
     public delegate void PathHandler( string path );
 
-    public static string? choose_readable_file()
+    public static string? choose_readable_file( Gtk.Window? parent )
     {
         var dlg = new FileDialog();
         dlg.title = "Open File";
         dlg.add_button( "_Open", Gtk.ResponseType.ACCEPT );
         dlg.action = Gtk.FileChooserAction.OPEN;
+        dlg.set_transient_for( parent );
         return dlg.exec();
     }
 
-    public static string? choose_writable_file()
+    public static string? choose_writable_file( Gtk.Window? parent )
     {
         var dlg = new FileDialog();
         dlg.title = "Save File";
         dlg.add_button( "_Save", Gtk.ResponseType.ACCEPT );
         dlg.action = Gtk.FileChooserAction.SAVE;
         dlg.do_overwrite_confirmation = true;
+        dlg.set_transient_for( parent );
         return dlg.exec();
     }
 
-    public static bool choose_readable_file_and( PathHandler handle )
+    public static bool choose_readable_file_and( Gtk.Window? parent, PathHandler handle )
     {
-        string? path = choose_readable_file();
+        string? path = choose_readable_file( parent );
         if( path == null )
         {      
             return false;
@@ -58,9 +60,9 @@ class FileDialog : Gtk.FileChooserDialog
         }
     }
 
-    public static bool choose_writable_file_and( PathHandler handle )
+    public static bool choose_writable_file_and( Gtk.Window? parent, PathHandler handle )
     {
-        string? path = choose_writable_file();
+        string? path = choose_writable_file( parent );
         if( path == null )
         {      
             return false;
