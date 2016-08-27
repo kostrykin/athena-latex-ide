@@ -164,12 +164,15 @@ public class SessionXml
             var active = reader.get_attribute( XML_ATTR_FILE_ACTIVE ) == "on";
 
             var file = loader.editor.open_file_from( path );
-            var file_view = loader.editor.get_source_view( file );
-            file_view.current_line = line;
-            Idle.add( () => { file_view.view_position = view; return false; } );
+            if( file != null )
+            {
+                var file_view = loader.editor.get_source_view( file );
+                file_view.current_line = line;
+                Idle.add( () => { file_view.view_position = view; return false; } );
 
-            if( active ) this.active = file;
-            if( master ) loader.editor.session.master = file;
+                if( active ) this.active = file;
+                if( master ) loader.editor.session.master = file;
+            }
         }
 
         private void process_build( SessionXml loader, Xml.TextReader reader ) throws XmlError

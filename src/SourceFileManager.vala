@@ -1,3 +1,5 @@
+public errordomain SourceFileError { NOT_FOUND }
+
 public class SourceFileManager
 {
 
@@ -51,6 +53,8 @@ public class SourceFileManager
                 }
             }
         }
+
+        public bool exists { get { return path != null && FileUtils.test( path, FileTest.IS_REGULAR | FileTest.EXISTS ); } }
 
         public string get_contents()
         {
@@ -221,7 +225,7 @@ public class SourceFileManager
         }
     }
 
-    public SourceFile open( string? path )
+    public SourceFile open( string? path ) throws SourceFileError
     {
         int position = get_insert_position( path );
 
@@ -246,12 +250,13 @@ public class SourceFileManager
         invalidate( position, files.size - position + 1 );
     }
 
-    private SourceFile open_ex( string? path, int position )
+    private SourceFile open_ex( string? path, int position ) throws SourceFileError
         requires( position >= 0 )
         requires( position <= files.size )
     {
         var flags = path == null ? new_file_flags : default_file_flags;
         var file  = new SourceFile( path, position, flags );
+        if( file.path != null && !file.exists ) throw new SourceFileError.NOT_FOUND( "File not found: %s".printf( path ) );
         insert_file( file );
         invalidate( position, files.size - position );
         return file;

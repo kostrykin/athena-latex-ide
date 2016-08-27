@@ -126,8 +126,7 @@ public class MainWindow : Gtk.ApplicationWindow
 
         preview.source_requested.connect( ( file_path, line ) =>
             {
-                editor.open_file_from( file_path );
-                editor.current_file_line = line;
+                if( editor.open_file_from( file_path ) != null ) editor.current_file_line = line;
             }
         );
 
@@ -580,8 +579,7 @@ public class MainWindow : Gtk.ApplicationWindow
     public void open_file( string path )
     {
         bool first_file = editor.current_file == null;
-        editor.open_file_from( path );
-        if( first_file ) show_editor();
+        if( editor.open_file_from( path ) != null && first_file ) show_editor();
     }
 
     private void open_new_file()
@@ -594,11 +592,7 @@ public class MainWindow : Gtk.ApplicationWindow
     {
         FileDialog.choose_readable_file_and( this, ( path ) =>
             {
-                if( path != null )
-                {
-                    editor.open_file_from( path );
-                    show_editor();
-                }
+                if( path != null ) open_file( path );
             }
         );
     }

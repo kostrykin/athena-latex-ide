@@ -320,22 +320,56 @@ public class Editor : Gtk.Box
         return get_toplevel() as Gtk.Window;
     }
 
-    public SourceFileManager.SourceFile open_file_from( string? path ) // FIXME: what happens if `path` can't be opened?
+    /**
+     * Opens the file from `path` in the editor, or a blank file if `path` is `null`.
+     *
+     * Returns a representation of the opened file, that is only `null`, if an error occures.
+     * Such error is reported to the user.
+     * This method ensures that no file is opened more than once at the same time.
+     * If the file, which `path` points to, is already open,
+     * then its view is focused and its already loaded representation returned.
+     */
+    public SourceFileManager.SourceFile? open_file_from( string? path )
     {
         var position = path != null ? session.files.find_position( path ) : -1;
         if( position < 0 )
         {
-            var file = session.files.open( path );
-            add_source_view( file );
+            string? error = null;
+            try
+            {
+                var file = session.files.open( path );
+                add_source_view( file );
 
-            /* We need now to switch to the newly added source view.
-             */
-            set_current_file_position( file.position );
+                /* We need now to switch to the newly added source view.
+                 */
+                set_current_file_position( file.position );
 
-            /* We've done with opening the file.
-             */
-            file_opened( file );
-            return file;
+                /* We've done with opening the file.
+                 */
+                file_opened( file );
+                return file;
+            }
+            catch( SourceFileError.NOT_FOUND err )
+            {
+                error = "The file doesn't exist.";
+            }
+            if( error != null )
+            {
+                var dlg = new Gtk.MessageDialog(  get_dialog_parent()
+                                               ,  Gtk.DialogFlags.MODAL
+                                               ,  Gtk.MessageType.ERROR
+                                               ,  Gtk.ButtonsType.CLOSE
+                                               , "Couldn't open %s".printf( path ) );
+
+                Utils.apply_dialog_style( dlg );
+
+                dlg.secondary_text = error;
+                dlg.set_transient_for( get_dialog_parent() );
+
+                dlg.run();
+                dlg.destroy();
+            }
+            return null;
         }
         else
         {
@@ -500,6 +534,7 @@ public class Editor : Gtk.Box
 
             dlg.secondary_text = "Shall it be saved before proceeding?";
             dlg.set_default_response( 2 );
+            dlg.set_transient_for( get_dialog_parent() );
 
             var dlg_result = dlg.run();
             dlg.destroy();
