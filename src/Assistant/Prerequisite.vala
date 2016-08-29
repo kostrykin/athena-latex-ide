@@ -41,9 +41,35 @@ namespace Assistant
             status = null;
         }
 
+        private int get_status_recursion_level = 0;
+
         public Prerequisite.Status get_status()
+            requires( get_status_recursion_level < 3 )
         {
-            if( status == null ) status = check_status();
+            ++get_status_recursion_level;
+            if( get_status_recursion_level > 1 ) while( status == null ) Gtk.main_iteration();
+            if( status == null )
+            {
+                bool is_thread_running = true;
+                ThreadFunc< void* > run = () =>
+                {
+                    var new_status = check_status();
+                    Thread.usleep( (ulong) 1e6 );
+                    Idle.add( () =>
+                        {
+                            status = new_status;
+                            is_thread_running = false;
+                            return false;
+                        }
+                    );
+                    return null;
+                };
+                Thread.create< void* >( run, false );
+
+                do Gtk.main_iteration();
+                while( is_thread_running );
+            }
+            --get_status_recursion_level;
             return status;
         }
 

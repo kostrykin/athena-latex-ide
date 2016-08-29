@@ -53,6 +53,7 @@ namespace Assistant
             set_page_title   ( summary_page, summary_page.get_name() );
             set_page_type    ( summary_page, Gtk.AssistantPageType.CONFIRM );
 
+            bool is_project_type_prepared = false;
             cancel.connect ( () => { destroy(); } );
             prepare.connect( () =>
                 {
@@ -60,7 +61,11 @@ namespace Assistant
                     if( get_current_page() == 1 )
                     {
                         general_page.sensitive = false;
-                        general_page.project_type.prepare( this );
+                        if( !is_project_type_prepared )
+                        {
+                            is_project_type_prepared = true;
+                            general_page.project_type.prepare( this );
+                        }
                     }
                 }
             );
@@ -83,6 +88,7 @@ namespace Assistant
         {
             page.completed.connect( set_page_complete );
             page.set_assistant( this );
+            page.hexpand = true;
             info( "Inserting page \"%s\" at position %d", page.get_name(), position );
             position = base.insert_page( page, position );
             set_page_title   ( page, page.   get_name() );

@@ -35,6 +35,16 @@ namespace Assistant
         public override void prepare( Context context )
         {
             base.prepare( context );
+            Idle.add( () =>
+                {
+                    add_prerequisites( context );
+                    return false;
+                }
+            );
+        }
+
+        private void add_prerequisites( Context context )
+        {
             prerequisites.add_prerequisite( new ProgramPrerequisite( context, "lualatex", "Please run: sudo apt-get install texlive-luatex" ) );
 
             prerequisites.add_prerequisite( create_fira_font_requisite( context, "Fira Typeface Mono", "FiraMono-Regular.ttf" ) );
