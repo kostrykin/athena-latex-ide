@@ -69,7 +69,15 @@ SettingsDialog .description {
 
 * {
     -GtkDialog-action-area-border: 12px;
-    /*-GtkDialog-button-spacing: 10px;*/
     -GtkDialog-content-area-border: 0;
+}
+
+.assistant-prerequisite-name,
+.assistant-summary-label {
+  font-weight: bold;
+}
+
+.assistant-prerequisite-details,
+.assistant-summary-value {
 }
 

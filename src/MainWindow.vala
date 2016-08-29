@@ -558,6 +558,8 @@ public class MainWindow : Gtk.ApplicationWindow
 
     private void start_project()
     {
+        var assistant = new Assistant.AssistantWindow( this );
+        assistant.show_all();
     }
 
     private void initialize_editor_pane()

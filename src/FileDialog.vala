@@ -46,6 +46,16 @@ class FileDialog : Gtk.FileChooserDialog
         return dlg.exec();
     }
 
+    public static string? choose_directory( Gtk.Window? parent )
+    {
+        var dlg = new FileDialog();
+        dlg.title = "Choose Directory";
+        dlg.add_button( "_Choose", Gtk.ResponseType.ACCEPT );
+        dlg.action = Gtk.FileChooserAction.SELECT_FOLDER;
+        dlg.set_transient_for( parent );
+        return dlg.exec();
+    }
+
     public static bool choose_readable_file_and( Gtk.Window? parent, PathHandler handle )
     {
         string? path = choose_readable_file( parent );
@@ -63,6 +73,20 @@ class FileDialog : Gtk.FileChooserDialog
     public static bool choose_writable_file_and( Gtk.Window? parent, PathHandler handle )
     {
         string? path = choose_writable_file( parent );
+        if( path == null )
+        {      
+            return false;
+        }
+        else
+        {
+            handle( path );
+            return true;
+        }
+    }
+
+    public static bool choose_directory_and( Gtk.Window? parent, PathHandler handle )
+    {
+        string? path = choose_directory( parent );
         if( path == null )
         {      
             return false;

@@ -4,30 +4,29 @@ namespace Assistant
     public class ProgramPrerequisite : AbstractPrerequisite
     {
 
-        public  string executable_name;
-        public  string install_instructions;
-        private Prerequisite.Status? status = null;
+        public string executable_name;
+        public string install_instructions;
 
-        public ProgramPrerequisite( string executable_name )
+        public ProgramPrerequisite( Context context, string executable_name, string install_instructions = "" )
         {
-            this.executable_name = executable_name;
+            base( context );
+            this.executable_name      = executable_name;
+            this.install_instructions = install_instructions;
         }
 
-        public override Prerequisite.Status check_status()
+        protected override Prerequisite.Status check_status()
         {
             if( executable_name.length == 0 )
             {
                 warning( "Empty executable name is prerequisite" );
                 return Prerequisite.Status.UNKNOWN;
             }
-            status = Environment.find_program_in_path( executable_name ) != null ? Prerequisite.Status.FULFILLED : Prerequisite.Status.VIOLATED;
-            return status;
+            return Environment.find_program_in_path( executable_name ) != null ? Prerequisite.Status.FULFILLED : Prerequisite.Status.VIOLATED;
         }
     
         public override string get_status_details()
         {
-            if( status == null ) check_status();
-            if( status == Prerequisite.Status.VIOLATED ) return install_instructions;
+            if( get_status() == Prerequisite.Status.VIOLATED ) return install_instructions;
             else return "";
         }
 

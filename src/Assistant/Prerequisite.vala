@@ -5,27 +5,49 @@ namespace Assistant
 
     public interface Prerequisite : Object
     {
-    
         public enum Status { FULFILLED, VIOLATED, UNKNOWN }
-    
-        public abstract Status check_status();
+
+        public abstract void invalidate_status();
+
+        public abstract Status get_status();
     
         public abstract string get_status_details();
+
+        public signal void status_details_changed();
 
         public abstract string get_name();
     
         public abstract bool is_fixable();
     
         public abstract async void fix() throws PrerequisiteError; // see: https://wiki.gnome.org/Projects/Vala/Tutorial#Asynchronous_Methods
-    
+
+        public abstract Context context { get; protected set; }
     }
 
     public abstract class AbstractPrerequisite : Object, Prerequisite
     {
 
         public string? name_override = null;
+        private Prerequisite.Status? status = null;
+        public Context context { get; protected set; }
 
-        public abstract Prerequisite.Status check_status();
+        public AbstractPrerequisite( Context context )
+        {
+            this.context = context;
+        }
+
+        public void invalidate_status()
+        {
+            status = null;
+        }
+
+        public Prerequisite.Status get_status()
+        {
+            if( status == null ) status = check_status();
+            return status;
+        }
+
+        protected abstract Prerequisite.Status check_status();
     
         public abstract string get_status_details();
 

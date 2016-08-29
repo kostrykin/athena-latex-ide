@@ -109,6 +109,12 @@ namespace Utils
         }
     }
 
+    public string find_file_by_exact_name( string base_dir_path, string filename, bool recursive )
+    {
+        var pattern = new Regex( Regex.escape_string( filename ) );
+        return find_file( base_dir_path, pattern, recursive );
+    }
+
     public string read_text_file( File file )
     {
         bool first_line = true;
@@ -125,14 +131,13 @@ namespace Utils
 
     public string? find_asset( string asset_name )
     {
-        var pattern = new Regex( Regex.escape_string( asset_name ) );
         var assets_dir = Path.build_path( Path.DIR_SEPARATOR_S, Environment.get_current_dir(), "assets" );
         string[] search_dirs = { assets_dir, Path.build_path( Path.DIR_SEPARATOR_S, get_install_prefix(), "share/athena-latex-ide" ) };
 
         foreach( string search_dir in search_dirs )
         {
             if( !FileUtils.test( search_dir, FileTest.IS_DIR | FileTest.EXISTS ) ) continue;
-            var result = find_file( search_dir, pattern, true );
+            var result = find_file_by_exact_name( search_dir, asset_name, true );
             if( result != null ) return result;
         }
 
@@ -143,5 +148,11 @@ namespace Utils
     extern unowned string get_install_prefix();
 
     extern unowned string get_version();
+
+    public static string resolve_home_dir( string path )
+    {
+        if( path.has_prefix( "~" ) ) return Path.build_path( Path.DIR_SEPARATOR_S, Environment.get_home_dir(), path.substring( 1 ) );
+        else return path;
+    }
 
 }
