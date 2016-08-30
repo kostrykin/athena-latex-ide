@@ -35,6 +35,9 @@ namespace Assistant
             project_types_view.insert_column_with_attributes( -1, "Project Type", project_types_name_renderer, "text", 0 );
             project_types_view.cursor_changed.connect( handle_changed_project_type );
 
+            project_type_details_view.wrap = true;
+            project_type_details_view.wrap_mode = Pango.WrapMode.WORD;
+
             attach( project_dir_label         , 0, 0, 1, 1 );
             attach( project_dir_entry         , 1, 0, 1, 1 );
             attach( btn_browse_for_project_dir, 2, 0, 1, 1 );

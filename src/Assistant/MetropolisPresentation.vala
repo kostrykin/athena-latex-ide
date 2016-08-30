@@ -28,7 +28,7 @@ namespace Assistant
 
         public MetropolisPresentation()
         {
-            base( "Metropolis Presentation", "Metropolis is a modern LaTeX Beamer theme" );
+            base( "Metropolis Presentation", "Metropolis is a modern LaTeX Beamer theme by Matthias Vogelgesang, that uses Mozilla's Fira typeface." );
             add_page( prerequisites );
         }
 
