@@ -81,7 +81,9 @@ namespace Assistant
         public new int append_page( Page page )
         {
             var pos = Utils.max( 0, get_n_pages() - 1 );
-            return insert_page( page, pos );
+            pos = insert_page( page, pos );
+            set_page_type( general_page, Gtk.AssistantPageType.CONFIRM );
+            return pos;
         }
 
         public new int insert_page( Page page, int position )
@@ -105,8 +107,8 @@ namespace Assistant
 
         private void load_project_types()
         {
-            general_page.add_project_type( new Letter() );
-            general_page.add_project_type( new JobApplication() );
+          //general_page.add_project_type( new Letter() );
+          //general_page.add_project_type( new JobApplication() );
             general_page.add_project_type( new MetropolisPresentation() );
         }
 

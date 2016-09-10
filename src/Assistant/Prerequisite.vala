@@ -54,7 +54,6 @@ namespace Assistant
                 ThreadFunc< void* > run = () =>
                 {
                     var new_status = check_status();
-                    Thread.usleep( (ulong) 1e6 );
                     Idle.add( () =>
                         {
                             status = new_status;

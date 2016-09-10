@@ -25,11 +25,19 @@ namespace Assistant
         }
 
         private PrerequisitesPage prerequisites = new PrerequisitesPage();
+        private FormPage          setup         = new FormPage( "Configuration" );
+
+        private static const string SETUP_AUTHOR    = "author";
+        private static const string SETUP_DATE      = "date";
+        private static const string SETUP_TITLE     = "title";
+        private static const string SETUP_SUB_TITLE = "sub-title";
+        private static const string SETUP_INSTITUTE = "institute";
 
         public MetropolisPresentation()
         {
             base( "Metropolis Presentation", "Metropolis is a modern LaTeX Beamer theme by Matthias Vogelgesang, that uses Mozilla's Fira typeface." );
             add_page( prerequisites );
+            add_page( setup );
         }
 
         public override void prepare( Context context )
@@ -38,6 +46,7 @@ namespace Assistant
             Idle.add( () =>
                 {
                     add_prerequisites( context );
+                    add_setup_fields();
                     return false;
                 }
             );
@@ -56,6 +65,15 @@ namespace Assistant
             prerequisites.add_prerequisite( create_sty_requisite( context, "beamerouterthememetropolis.sty", "https://dl.dropboxusercontent.com/u/8265828/metropolis/beamerouterthememetropolis.sty" ) );
             prerequisites.add_prerequisite( create_sty_requisite( context, "beamerthememetropolis.sty"     , "https://dl.dropboxusercontent.com/u/8265828/metropolis/beamerthememetropolis.sty"      ) );
             prerequisites.add_prerequisite( create_sty_requisite( context, "pgfplotsthemetol.sty"          , "https://dl.dropboxusercontent.com/u/8265828/metropolis/pgfplotsthemetol.sty"           ) );
+        }
+
+        private void add_setup_fields()
+        {
+            setup.append_entry( SETUP_AUTHOR   , "Author:"   , new FormValidators.NonEmpty() );
+            setup.append_entry( SETUP_DATE     , "Date:"     , null );
+            setup.append_entry( SETUP_TITLE    , "Title:"    , new FormValidators.NonEmpty() );
+            setup.append_entry( SETUP_SUB_TITLE, "Sub-title:", null );
+            setup.append_entry( SETUP_INSTITUTE, "Institute:", null );
         }
 
     }

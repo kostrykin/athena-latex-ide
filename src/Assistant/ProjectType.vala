@@ -68,7 +68,7 @@ namespace Assistant
         public void withdraw( AssistantWindow assistant ) requires( activated ) ensures( !activated )
         {
             activated = false;
-            for( int page_idx = 0; page_idx < pages.size; ++page_idx ) assistant.remove_page( 1 + page_idx );
+            for( int page_idx = pages.size - 1; page_idx >= 0; --page_idx ) assistant.remove_page( 1 + page_idx );
         }
 
     }
