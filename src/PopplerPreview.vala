@@ -91,13 +91,15 @@ public class PopplerPreview : PdfPreview
                 zoom.set_sensitive( !btn_zoom_best_match.get_active() );
             }
         );
-        int my_current_width = -1;
+        int my_current_width  = -1;
+        int my_current_height = -1;
         size_allocate.connect_after( ( alloc ) =>
             {
-                if( my_current_width != alloc.width )
+                if( my_current_width != alloc.width || my_current_height != alloc.height )
                 {
                     if( btn_zoom_best_match.get_active() ) display.zoom = display.best_match_zoom_level;
-                    my_current_width = alloc.width;
+                    my_current_width  = alloc.width;
+                    my_current_height = alloc.height;
                 }
             }
         );
