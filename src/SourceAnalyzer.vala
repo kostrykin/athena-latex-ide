@@ -30,9 +30,9 @@ public class SourceAnalyzer : Object
                     label_pattern = create_simple_command_pattern(         "label" );
             documentclass_pattern = create_simple_command_pattern( "documentclass" );
                usepackage_pattern = create_simple_command_pattern(    "usepackage" );
-             bib_entry_pattern = new Regex( """[^\\/]*@[a-z]{3,}{ *([A-Za-z0-9_:]+)""", RegexCompileFlags.ANCHORED );
+             bib_entry_pattern = new Regex( """[^\\/]*@[a-z]{3,}{ *([A-Za-z0-9_:]+)"""        , RegexCompileFlags.ANCHORED );
             newcommand_pattern = new Regex( """[^%]*\\(?:re)?newcommand{\\([A-Za-z0-9_:]+)}""", RegexCompileFlags.ANCHORED );
-                   def_pattern = new Regex( """[^%]*\\def\\([A-Za-z0-9_:]+)""", RegexCompileFlags.ANCHORED );
+                   def_pattern = new Regex( """[^%]*\\def\\([A-Za-z0-9_:]+)"""                , RegexCompileFlags.ANCHORED );
         }
         catch( RegexError err )
         {

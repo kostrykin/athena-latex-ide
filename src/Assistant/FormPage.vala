@@ -20,24 +20,13 @@ namespace Assistant
 
         private Gee.List< FormValidator > validators = new Gee.ArrayList< FormValidator >();
 
-        private int append_new( string label )
+        private int append_new( string key, string label, FormValidator? validator, bool align_label_center = true )
         {
             var label_view = new Gtk.Label( label );
             label_view.ellipsize = Pango.EllipsizeMode.END;
-            label_view.set_alignment( 0, 0.5f );
+            label_view.set_alignment( 0, align_label_center ? 0.5f : 0f );
             label_view.show();
             attach( label_view, 0, ++last_line, 1, 1 );
-            return last_line;
-        }
-
-        public void append_entry( string key, string label, FormValidator? validator )
-            requires( ( key in values.keys ) == false )
-            ensures ( ( key in values.keys ) == true  )
-        {
-            var line = append_new( label );
-            var entry = new Gtk.Entry();
-            entry.hexpand = true;
-            attach( entry, 1, line, 1, 1 );
 
             if( validator != null )
             {
@@ -45,20 +34,60 @@ namespace Assistant
                 validators.add( validator );
             }
 
+            return last_line;
+        }
+
+        private void process_validator( FormValidator? validator )
+        {
+            if( validator != null )
+            {
+                validator.validate( this );
+                completed( this, is_complete() );
+            }
+        }
+
+        public void append_entry( string key, string label, FormValidator? validator )
+            requires( ( key in values.keys ) == false )
+            ensures ( ( key in values.keys ) == true  )
+        {
+            var line = append_new( key, label, validator );
+            var entry = new Gtk.Entry();
+            entry.hexpand = true;
+            attach( entry, 1, line, 1, 1 );
+
             string entry_key = key;
             entry.changed.connect( () =>
                 {
                     values[ entry_key ] = entry.get_text();
                     assistant.set_summary_line( label, values[ entry_key ] );
-                    if( validator != null )
-                    {
-                        validator.validate( this );
-                        completed( this, is_complete() );
-                    }
+                    process_validator( validator );
                 }
             );
             entry.changed();
             entry.show();
+        }
+
+        public void append_text_view( string key, string label, FormValidator? validator )
+            requires( ( key in values.keys ) == false )
+            ensures ( ( key in values.keys ) == true  )
+        {
+            var line   = append_new( key, label, validator, false );
+            var scroll = new Gtk.ScrolledWindow( null, null );
+            var view   = new Gtk.TextView();
+            view.hexpand = true;
+            scroll.add( view );
+            attach( scroll, 1, line, 1, 1 );
+
+            string entry_key = key;
+            view.buffer.changed.connect( () =>
+                {
+                    values[ entry_key ] = view.buffer.text;
+                    assistant.set_summary_line( label, values[ entry_key ] );
+                    process_validator( validator );
+                }
+            );
+            view.buffer.changed();
+            scroll.show_all();
         }
 
         public string get( string key )

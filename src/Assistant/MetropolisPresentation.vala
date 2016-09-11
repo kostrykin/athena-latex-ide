@@ -69,11 +69,39 @@ namespace Assistant
 
         private void add_setup_fields()
         {
-            setup.append_entry( SETUP_AUTHOR   , "Author:"   , new FormValidators.NonEmpty() );
-            setup.append_entry( SETUP_DATE     , "Date:"     , null );
-            setup.append_entry( SETUP_TITLE    , "Title:"    , new FormValidators.NonEmpty() );
-            setup.append_entry( SETUP_SUB_TITLE, "Sub-title:", null );
-            setup.append_entry( SETUP_INSTITUTE, "Institute:", null );
+            setup.append_entry    ( SETUP_AUTHOR   , "Author:"   , new FormValidators.NonEmpty() );
+            setup.append_entry    ( SETUP_DATE     , "Date:"     , null );
+            setup.append_entry    ( SETUP_TITLE    , "Title:"    , new FormValidators.NonEmpty() );
+            setup.append_entry    ( SETUP_SUB_TITLE, "Sub-title:", null );
+            setup.append_text_view( SETUP_INSTITUTE, "Institute:", null );
+        }
+
+        public override void create()
+        {
+            string? asset_path = Utils.find_asset( "metropolis.tex" );
+            assert( asset_path != null );
+            var asset_file = File.new_for_path( asset_path );
+            var asset_contents = Utils.read_text_file( asset_file );
+            asset_contents = asset_contents.replace( "%% HEADER %%\n", get_header() );
+
+            string tex_path = Path.build_path( Path.DIR_SEPARATOR_S, context.get_project_dir_path(), "slides.tex" );
+            var tex_file = File.new_for_path( tex_path );
+            tex_file.replace_contents( asset_contents.data, null, false, FileCreateFlags.NONE, null, null );
+        }
+
+        private string get_header()
+        {
+            var header = "\\author{%s}\n\\title{%s}\n".printf( setup[ SETUP_AUTHOR ], setup[ SETUP_TITLE  ] );
+
+            var date      = setup[ SETUP_DATE      ]; 
+            var sub_title = setup[ SETUP_SUB_TITLE ]; 
+            var institute = setup[ SETUP_INSTITUTE ]; 
+
+            if(      date.length > 0 ) header += "\\date{%s}\n"     .printf( date );
+            if( sub_title.length > 0 ) header += "\\subtitle{%s}\n" .printf( sub_title );
+            if( institute.length > 0 ) header += "\\institute{%s}\n".printf( institute );
+
+            return header;
         }
 
     }

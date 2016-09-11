@@ -43,8 +43,8 @@ namespace Assistant
                 line_info.value_view = new Gtk.Label( value );
                 line_info.label_view.show();
                 line_info.value_view.show();
-                line_info.label_view.set_alignment( 1, 0.5f );
-                line_info.value_view.set_alignment( 0, 0.5f );
+                line_info.label_view.set_alignment( 1, 0 );
+                line_info.value_view.set_alignment( 0, 0 );
                 line_info.label_view.get_style_context().add_class( "assistant-summary-label" );
                 line_info.value_view.get_style_context().add_class( "assistant-summary-value" );
                 line_info.value_view.ellipsize = Pango.EllipsizeMode.END;

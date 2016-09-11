@@ -54,7 +54,8 @@ namespace Assistant
             set_page_type    ( summary_page, Gtk.AssistantPageType.CONFIRM );
 
             bool is_project_type_prepared = false;
-            cancel.connect ( () => { destroy(); } );
+            close  .connect( finish );
+            cancel .connect( () => { destroy(); } );
             prepare.connect( () =>
                 {
                     ( get_nth_page( get_current_page() ) as Page ).prepare();
@@ -76,6 +77,13 @@ namespace Assistant
             navigation.remove( tmp );
 
             load_project_types();
+        }
+
+        private void finish()
+            requires( general_page.project_type != null )
+        {
+            general_page.project_type.create();
+            destroy();
         }
 
         public new int append_page( Page page )

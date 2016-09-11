@@ -9,6 +9,10 @@ namespace Assistant
             base( "Letter" );
         }
 
+        public override void create()
+        {
+        }
+
     }
 
 }

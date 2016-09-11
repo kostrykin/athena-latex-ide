@@ -9,6 +9,10 @@ namespace Assistant
             base( "Job Application" );
         }
 
+        public override void create()
+        {
+        }
+
     }
 
 }

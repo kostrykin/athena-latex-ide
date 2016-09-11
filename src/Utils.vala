@@ -111,7 +111,7 @@ namespace Utils
 
     public string find_file_by_exact_name( string base_dir_path, string filename, bool recursive )
     {
-        var pattern = new Regex( Regex.escape_string( filename ) );
+        var pattern = new Regex( Regex.escape_string( filename ) + "$", RegexCompileFlags.ANCHORED | RegexCompileFlags.DOLLAR_ENDONLY );
         return find_file( base_dir_path, pattern, recursive );
     }
 
