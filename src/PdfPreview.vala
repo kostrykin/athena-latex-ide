@@ -72,7 +72,6 @@ public abstract class PdfPreview : Gtk.Box
             {
                 node.sibling();
             }
-            node.sibling();
         }
 
         /* We proceed, if the previous search was successful.

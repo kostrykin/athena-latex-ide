@@ -220,7 +220,9 @@ public class PopplerPreview : PdfPreview
             /* Adapt zoom level if necessary.
              * If adapting, then leave a small margin.
              */
-            if( Athena.instance.settings.fit_preview_zoom_after_build && global_rect.w > display.visible_area_width )
+            if( Athena.instance.settings.fit_preview_zoom_after_build
+                &&  global_rect.w > display.visible_area_width
+                && !btn_zoom_best_match.get_active() )
             {
                 btn_zoom_best_match.set_active( false );
                 var suggested_zoom = display.zoom * visible_area.w / ( global_rect.w * 1.05 );

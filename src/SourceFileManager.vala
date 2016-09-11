@@ -32,18 +32,19 @@ public class SourceFileManager
             }
             internal set
             {
-                this._path = value;
                 this.stop_monitor();
                 if( value == null )
                 {
                     uint new_file_index = NEXT_NEW_FILE_INDEX++;
                     this.label = "New File %u".printf( new_file_index );
                     this.file  = null;
+                    this._path = null;
                 }
                 else
                 {
-                    this.label   = Path.get_basename( this.path );
-                    this.file    = File.new_for_path( this.path );
+                    this.file    = File.new_for_path( value );
+                    this._path   = this.file.get_path();
+                    this.label   = Path.get_basename( this._path );
                     this.monitor = this.file.monitor( FileMonitorFlags.NONE, null );
                     if( _contents != null )
                     {
