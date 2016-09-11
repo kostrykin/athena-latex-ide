@@ -1,0 +1,5 @@
+- latex needs to be executed from within the project root directory (otherwise input/include do not work as expected)
+- PDF preview viewport isn't updated when auto-fit is turned on and the *window* is resized (it works when the pane is resized)
+- the build log should (also?) show the `.log` file when build fails (maybe just append it to the regular output)
+- fix the "Weiter" button, which should become sensitive, after all preqrequisites are auto-fixed
+

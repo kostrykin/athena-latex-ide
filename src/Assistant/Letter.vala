@@ -9,7 +9,7 @@ namespace Assistant
             base( "Letter" );
         }
 
-        public override void create()
+        public override void create( MainWindow main_window )
         {
         }
 

@@ -37,12 +37,15 @@ namespace Assistant
 
         public Gtk.Container navigation { get; private set; }
 
-        public AssistantWindow( Gtk.Window? parent )
+        private weak MainWindow main_window;
+
+        public AssistantWindow( MainWindow? parent )
         {
             Object( use_header_bar: 1 );
             modal = true;
             set_transient_for( parent );
             set_default_size( 500, 500 );
+            main_window = parent;
 
             general_page = new GeneralPage( this );
             append_page  ( general_page );
@@ -82,7 +85,7 @@ namespace Assistant
         private void finish()
             requires( general_page.project_type != null )
         {
-            general_page.project_type.create();
+            general_page.project_type.create( main_window );
             destroy();
         }
 

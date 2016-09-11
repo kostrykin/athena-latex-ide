@@ -9,8 +9,8 @@ namespace Assistant
             var requisite = new DownloadablePrerequisite
                     ( context
                     , filename
-                    , @"https://github.com/mozilla/Fira/blob/master/ttf/$filename?raw=true"
-                    , "~/.fonts/FiraSans/" );
+                    , @"https://github.com/mozilla/Fira/blob/master/ttf/$filename.ttf?raw=true"
+                    , "~/.fonts/Fira/" );
 
             requisite.add_font_search_directories();
             requisite.name_override = name;
@@ -52,12 +52,19 @@ namespace Assistant
             );
         }
 
+        private static const string XELATEX_INSTALL_INSTRUCTIONS = "Please run: sudo apt-get install texlive-xetex";
+
         private void add_prerequisites( Context context )
         {
-            prerequisites.add_prerequisite( new ProgramPrerequisite( context, "lualatex", "Please run: sudo apt-get install texlive-luatex" ) );
+            prerequisites.add_prerequisite( new ProgramPrerequisite( context, "xelatex", XELATEX_INSTALL_INSTRUCTIONS ) );
+            prerequisites.add_prerequisite( new PackagePrerequisite( context, "eu2enc" , XELATEX_INSTALL_INSTRUCTIONS ) );
 
-            prerequisites.add_prerequisite( create_fira_font_requisite( context, "Fira Typeface Mono", "FiraMono-Regular.ttf" ) );
-            prerequisites.add_prerequisite( create_fira_font_requisite( context, "Fira Typeface Sans", "FiraSans-Regular.ttf" ) );
+            prerequisites.add_prerequisite( create_fira_font_requisite( context, "Fira Typeface Mono"             , "FiraMono-Regular" ) );
+            prerequisites.add_prerequisite( create_fira_font_requisite( context, "Fira Typeface Mono-Bold"        , "FiraMono-Bold"    ) );
+            prerequisites.add_prerequisite( create_fira_font_requisite( context, "Fira Typeface Sans"             , "FiraSans-Regular" ) );
+            prerequisites.add_prerequisite( create_fira_font_requisite( context, "Fira Typeface Sans-Light"       , "FiraSans-Light" ) );
+            prerequisites.add_prerequisite( create_fira_font_requisite( context, "Fira Typeface Sans-Light-Italic", "FiraSans-LightItalic" ) );
+            prerequisites.add_prerequisite( create_fira_font_requisite( context, "Fira Typeface Sans-Italic"      , "FiraSans-Italic" ) );
 
             prerequisites.add_prerequisite( create_sty_requisite( context, "beamercolorthememetropolis.sty", "https://dl.dropboxusercontent.com/u/8265828/metropolis/beamercolorthememetropolis.sty" ) );
             prerequisites.add_prerequisite( create_sty_requisite( context, "beamerfontthememetropolis.sty" , "https://dl.dropboxusercontent.com/u/8265828/metropolis/beamerfontthememetropolis.sty"  ) );
@@ -76,17 +83,20 @@ namespace Assistant
             setup.append_text_view( SETUP_INSTITUTE, "Institute:", null );
         }
 
-        public override void create()
+        public override void create( MainWindow main_window )
         {
             string? asset_path = Utils.find_asset( "metropolis.tex" );
             assert( asset_path != null );
             var asset_file = File.new_for_path( asset_path );
             var asset_contents = Utils.read_text_file( asset_file );
-            asset_contents = asset_contents.replace( "%% HEADER %%\n", get_header() );
+            asset_contents = asset_contents.replace( "%% HEADER %%\n", get_header() ) + "\n";
 
             string tex_path = Path.build_path( Path.DIR_SEPARATOR_S, context.get_project_dir_path(), "slides.tex" );
             var tex_file = File.new_for_path( tex_path );
             tex_file.replace_contents( asset_contents.data, null, false, FileCreateFlags.NONE, null, null );
+
+            main_window.editor.open_file_from( tex_path );
+            main_window.request_build_type( BuildManager.FLAGS_XE_LATEX );
         }
 
         private string get_header()

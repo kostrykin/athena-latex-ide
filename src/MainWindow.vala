@@ -36,12 +36,13 @@ public class MainWindow : Gtk.ApplicationWindow
     private static const string SIDE_STACK_PREVIEW = "preview";
     private static const string SIDE_STACK_HELP    = "help";
 
+    public Editor editor { get; private set; default = new Editor(); }
+
     private Gtk.HeaderBar  headerbar  = new Gtk.HeaderBar();
     private Gtk.Overlay    overlay    = new Gtk.Overlay();
     private Gtk.Paned      pane       = new Gtk.Paned ( Gtk.Orientation.HORIZONTAL );
     private Gtk.Stack      main_stack = new Gtk.Stack();
     private Gtk.Stack      side_stack = new Gtk.Stack();
-    private Editor         editor     = new Editor();
     private PdfPreview     preview    = new PopplerPreview();
     private Gtk.AccelGroup hotkeys    = new Gtk.AccelGroup();
     private OverlayBar     build_info;
@@ -159,6 +160,28 @@ public class MainWindow : Gtk.ApplicationWindow
         );
     }
 
+    public void request_build_type( uint build_type_flags )
+    {
+        var build_name = builder.resolve_build_type( build_type_flags );
+
+        int candidate_idx = -1;
+        Gtk.TreeIter itr;
+        build_types.get_iter_first( out itr );
+        do
+        {
+            ++candidate_idx;
+            string candidate_name;
+            build_types.@get( itr, 0, out candidate_name );
+            if( candidate_name == build_name )
+            {
+                build_types_view.active = candidate_idx;
+                return;
+            }
+        }
+        while( build_types.iter_next( ref itr ) );
+        assert_not_reached();
+    }
+
     public override void destroy()
     {
         this.build_log = null;
@@ -208,8 +231,8 @@ public class MainWindow : Gtk.ApplicationWindow
         add_hotkey( HOTKEY_FULL_BUILD , handle_build_hotkey );
         add_hotkey( HOTKEY_CLOSE      , () => { if( editor.current_file != null ) editor.close_current_file(); } );
         add_hotkey( HOTKEY_SAVE       , () => { if( editor.current_file != null ) editor.save_current_file (); } );
-        add_hotkey( HOTKEY_OPEN       , () => { if( editor.current_file == null ) open_previous(); else editor.open_file    (); } );
-        add_hotkey( HOTKEY_NEW        , () => { if( editor.current_file == null ) open_new_file(); else editor.open_new_file(); } );
+        add_hotkey( HOTKEY_OPEN       , editor.open_file     );
+        add_hotkey( HOTKEY_NEW        , editor.open_new_file );
         add_hotkey( HOTKEY_SEARCH     , editor.toggle_search );
     }
 
@@ -475,11 +498,11 @@ public class MainWindow : Gtk.ApplicationWindow
                     break;
 
                 case 1:
-                    self.open_new_file();
+                    editor.open_new_file();
                     break;
 
                 case 2:
-                    self.open_previous();
+                    editor.open_file();
                     break;
 
                 }
@@ -502,8 +525,7 @@ public class MainWindow : Gtk.ApplicationWindow
         howto_title.set_alignment( 0.5f, 0 );
         help.add( howto_title );
 
-        var howto = new Gtk.Label(
-"""A <b>Quick Build</b> will be sufficient most of the time. If anything appears out of order, try a <b>Full Build</b>.""" );
+        var howto = new Gtk.Label( """A <b>Quick Build</b> will be sufficient most of the time. If anything appears out of order, try a <b>Full Build</b>.""" );
         howto.get_style_context().add_class( Granite.StyleClass.H3_TEXT );
         howto.use_markup = true;
         howto.wrap = true;
@@ -511,11 +533,8 @@ public class MainWindow : Gtk.ApplicationWindow
         howto.set_alignment( 0, 0 );
         help.add( howto );
 
-        var details = new Gtk.Label(
-"""Particularly, a <b>Full Build</b> is appropriate after
-
-    &#8226; you changed the bibliography
-    &#8226; or updating any labels.""" );
+        var details = new Gtk.Label( """Consider a <b>Full Build</b> when you changed the <i>bibliography</i>, updated any <i>labels</i> or did some major changes to the document's structure.""" );
+        details.get_style_context().add_class( Granite.StyleClass.H3_TEXT );
         details.use_markup = true;
         details.wrap = true;
         details.wrap_mode = Pango.WrapMode.WORD;
@@ -529,6 +548,11 @@ public class MainWindow : Gtk.ApplicationWindow
     private void setup_editor()
     {
         main_stack.add_named( pane, MAIN_STACK_EDITOR );
+        editor.file_opened.connect( () =>
+            {
+                if( editor.files_count == 1 ) Idle.add( () => { show_editor(); return false; } );
+            }
+        );
         editor.file_closed.connect( () =>
             {
                 if( editor.files_count == 0 ) start_new_session( false );
@@ -576,27 +600,6 @@ public class MainWindow : Gtk.ApplicationWindow
 
         int window_width = overlay.get_allocated_width() + side_stack.get_allocated_width(); // `get_allocated_width` misses 100px... -,-
         side_stack.set_size_request( window_width - pane_position, 200 );
-    }
-
-    public void open_file( string path )
-    {
-        bool first_file = editor.current_file == null;
-        if( editor.open_file_from( path ) != null && first_file ) show_editor();
-    }
-
-    private void open_new_file()
-    {
-        editor.open_new_file();
-        show_editor();
-    }
-
-    private void open_previous()
-    {
-        FileDialog.choose_readable_file_and( this, ( path ) =>
-            {
-                if( path != null ) open_file( path );
-            }
-        );
     }
 
     private void show_editor()

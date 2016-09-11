@@ -12,13 +12,19 @@ public class BuildManager
     public static const string VAR_OUTPUT     = "OUTPUT";       ///< e.g. `/path/.build/file
     public static const string VAR_BUILD_DIR  = "BUILD_DIR";    ///< e.g. `/path/.build`
 
-    private Gee.Map< string, CommandSequence > build_types = new Gee.TreeMap< string, CommandSequence >();
+    private Gee.Map< string, CommandSequence > build_types          = new Gee.TreeMap< string, CommandSequence >();
+    private Gee.Map< uint  , string          > build_names_by_flags = new Gee.HashMap< uint  , string          >();
+
+    public static const uint FLAGS_LUA_LATEX = ( 1 << 0 );
+    public static const uint FLAGS_XE_LATEX  = ( 2 << 0 );
+    public static const uint FLAGS_BIBTEX    = ( 3 << 0 );
 
     public BuildManager()
     {
-        const string latex_cmds [] = { "pdflatex"     , "pdflatex"              , "lualatex", "lualatex"         , "xetex", "xetex         " };
-        const bool   bibtex_on  [] = {  false         ,  true                   ,  false    ,  true              ,  false ,  true            };
-        const string build_names[] = { "Default LaTeX", "Default LaTeX + BibTeX", "LuaLaTeX", "LuaLaTeX + BibTeX", "XeTeX", "XeTeX + BibTeX" };
+        const string latex_cmds [] = { "pdflatex"     , "pdflatex"              , "lualatex"      , "lualatex"                     , "xelatex"      , "xelatex"                      };
+        const bool   bibtex_on  [] = {  false         ,  true                   ,  false          ,  true                          ,  false         ,  true                          };
+        const string build_names[] = { "Default LaTeX", "Default LaTeX + BibTeX", "LuaLaTeX"      , "LuaLaTeX + BibTeX"            , "XeLaTeX"      , "XeLaTeX + BibTeX"             };
+        const uint   flags      [] = {  0             ,  FLAGS_BIBTEX           ,  FLAGS_LUA_LATEX,  FLAGS_LUA_LATEX | FLAGS_BIBTEX,  FLAGS_XE_LATEX,  FLAGS_XE_LATEX | FLAGS_BIBTEX };
         for( int idx = 0; idx < latex_cmds.length; ++idx )
         {
             var latex_cmd = latex_cmds[ idx ];
@@ -30,12 +36,13 @@ public class BuildManager
              *  3. tex to pdf -- creates citation entries from `.ref` file
              *  4. tex to pdf -- updates citations in text
              */
+            build_names_by_flags[ flags[ idx ] ] = build_names[ idx ];
             build_types[ build_names[ idx ] ] = new CommandSequence.from_string(
 
                 """
                 %s
-                %s: %s --output-directory "$BUILD_DIR" --synctex=1 "$INPUT"
-                %s: %s --output-directory "$BUILD_DIR" "$INPUT"
+                %s: %s --output-directory "$BUILD_DIR" --interaction=batchmode --synctex=1 "$INPUT"
+                %s: %s --output-directory "$BUILD_DIR" --interaction=batchmode "$INPUT"
                 """
                 .printf( COMMAND_INIT, MODE_QUICK, latex_cmd, MODE_FULL, latex_cmd )
 
@@ -43,7 +50,7 @@ public class BuildManager
                 ?
                     """
                     %s: bibtex -terse "$INPUT_NAME.aux"
-                    %s: %s -output-directory "$BUILD_DIR" "$INPUT"
+                    %s: %s --output-directory "$BUILD_DIR" --interaction=batchmode "$INPUT"
                     """
                     .printf( MODE_FULL, MODE_FULL, latex_cmd )
                 :
@@ -51,7 +58,7 @@ public class BuildManager
                 ) +
 
                 """
-                %s: %s -output-directory "$BUILD_DIR" --synctex=1 "$INPUT"
+                %s: %s --output-directory "$BUILD_DIR" --interaction=batchmode --synctex=1 "$INPUT"
                 %s
                 ln --force "$OUTPUT.pdf" "../$INPUT_NAME.pdf"
                 """
@@ -107,6 +114,36 @@ public class BuildManager
         context.special_commands.add( COMMAND_INIT    );
         context.special_commands.add( COMMAND_PREVIEW );
         return context;
+    }
+
+    private static uint compute_hemming_distance( uint f1, uint f2 )
+    {
+        uint distance = 0;
+        for( int i = 0; i < 8 * (uint) sizeof( uint ); ++i )
+        {
+            uint mask = ( 1 << i );
+            if( ( f1 & mask ) != ( f2 & mask ) ) ++distance;
+        }
+        return distance;
+    }
+
+    public string resolve_build_type( uint flags )
+    {
+        uint   min_error = 1 + 8 * (uint) sizeof( uint );
+        string min_error_name = "";
+
+        foreach( uint candidate_flags in build_names_by_flags.keys )
+        {
+            var candidate_distance = compute_hemming_distance( flags, candidate_flags );
+            if( candidate_distance < min_error )
+            {
+                min_error = candidate_distance;
+                min_error_name = build_names_by_flags[ candidate_flags ];
+            }
+        }
+
+        if( min_error > 0 ) warning( "Failed to satisfy all requested build type flags (%u)", min_error );
+        return min_error_name;
     }
 
 }

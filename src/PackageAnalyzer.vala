@@ -116,15 +116,15 @@ public class PackageAnalyzer : Object
 
     private static Regex create_package_file_name_pattern( string package_name )
     {
-        return new Regex( """%s\.(?:sty|cls)$""".printf( Regex.escape_string( package_name ) )
+        return new Regex( """%s\.(?:sty|cls|def)$""".printf( Regex.escape_string( package_name ) )
                         , RegexCompileFlags.ANCHORED | RegexCompileFlags.DOLLAR_ENDONLY );
     }
 
-    private static void dispose_request( Result package_info, string? path )
+    public static string? find_package( string package_name, string? extra_path )
     {
-        var filename_pattern = create_package_file_name_pattern( package_info.name );
+        var filename_pattern = create_package_file_name_pattern( package_name );
+        string? base_dir_paths[] = { extra_path, "/usr/share/texlive/texmf-dist/tex", "/usr/share/texmf/tex/latex" };
         string? file_path = null;
-        string base_dir_paths[] = { path, "/usr/share/texlive/texmf-dist/tex", "/usr/share/texmf/tex/latex" };
 
         for( int i = 0; file_path == null && i < base_dir_paths.length; ++i )
         {
@@ -133,6 +133,12 @@ public class PackageAnalyzer : Object
             file_path = Utils.find_file( base_dir_path, filename_pattern, i > 0 );
         }
 
+        return file_path;
+    }
+
+    private static void dispose_request( Result package_info, string? path )
+    {
+        string? file_path = find_package( package_info.name, path );
         if( file_path == null ) warning( "Failed to find package \"%s\"", package_info.name );
         else
         {

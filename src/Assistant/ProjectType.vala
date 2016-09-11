@@ -11,7 +11,7 @@ namespace Assistant
         public abstract string get_name();
         public abstract string get_description();
 
-        public abstract void create();
+        public abstract void create( MainWindow main_window );
     }
 
     public abstract class SimpleProjectType : Object, ProjectType
@@ -73,7 +73,7 @@ namespace Assistant
             for( int page_idx = pages.size - 1; page_idx >= 0; --page_idx ) assistant.remove_page( 1 + page_idx );
         }
 
-        public abstract void create();
+        public abstract void create( MainWindow main_window );
 
     }
 

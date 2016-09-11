@@ -100,7 +100,7 @@ public class Athena : Granite.Application
             window.start_new_session( false );
         }
         process_events();
-        foreach( var file in files ) window.open_file( file.get_path() );
+        foreach( var file in files ) window.editor.open_file_from( file.get_path() );
         window.present();
     }
 
