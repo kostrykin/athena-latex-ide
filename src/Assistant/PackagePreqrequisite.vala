@@ -22,7 +22,7 @@ namespace Assistant
                 return Status.UNKNOWN;
             }
 
-            return PackageAnalyzer.find_package( package_name, context.resolve_path( ".build" ) ) != null
+            return PackageAnalyzer.find_package( package_name, context.get_project_dir_path() ) != null
                     ? Prerequisite.Status.FULFILLED
                     : Prerequisite.Status.VIOLATED;
         }
