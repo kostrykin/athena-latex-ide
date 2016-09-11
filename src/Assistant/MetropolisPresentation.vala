@@ -76,11 +76,11 @@ namespace Assistant
 
         private void add_setup_fields()
         {
-            setup.append_entry    ( SETUP_AUTHOR   , "Author:"   , new FormValidators.NonEmpty() );
-            setup.append_entry    ( SETUP_DATE     , "Date:"     , null );
-            setup.append_entry    ( SETUP_TITLE    , "Title:"    , new FormValidators.NonEmpty() );
-            setup.append_entry    ( SETUP_SUB_TITLE, "Sub-title:", null );
-            setup.append_text_view( SETUP_INSTITUTE, "Institute:", null );
+            setup.append_entry    ( SETUP_AUTHOR   , "Author:"    , new FormValidators.NonEmpty(), Environment.get_real_name() );
+            setup.append_entry    ( SETUP_TITLE    , "Title:"     , new FormValidators.NonEmpty() );
+            setup.append_entry    ( SETUP_SUB_TITLE, "Sub-title:" , null );
+            setup.append_entry    ( SETUP_DATE     , "Fixed date:", null );
+            setup.append_text_view( SETUP_INSTITUTE, "Institute:" , null );
         }
 
         public override void create( MainWindow main_window )

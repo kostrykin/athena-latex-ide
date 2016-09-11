@@ -680,6 +680,7 @@ public class MainWindow : Gtk.ApplicationWindow
         foreach( var key in context.variables.keys ) longest_key = Utils.max( longest_key, key.length );
         var format = "%" + longest_key.to_string() + "s = %s\n";
         foreach( var key in context.variables.keys ) append_build_log( build, format.printf( key, context.variables[ key ] ) );
+        Environment.set_variable( "openout_any", "a", true ); // required to make `bibtex` work when using `--output-directory` on `pdflatex`
     }
 
     private void update_preview()

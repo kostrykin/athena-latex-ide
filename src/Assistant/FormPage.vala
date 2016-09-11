@@ -46,19 +46,20 @@ namespace Assistant
             }
         }
 
-        public void append_entry( string key, string label, FormValidator? validator )
+        public void append_entry( string key, string label, FormValidator? validator, string default_value = "" )
             requires( ( key in values.keys ) == false )
             ensures ( ( key in values.keys ) == true  )
         {
             var line = append_new( key, label, validator );
             var entry = new Gtk.Entry();
             entry.hexpand = true;
+            entry.text = default_value;
             attach( entry, 1, line, 1, 1 );
 
             string entry_key = key;
             entry.changed.connect( () =>
                 {
-                    values[ entry_key ] = entry.get_text();
+                    values[ entry_key ] = entry.text;
                     assistant.set_summary_line( label, values[ entry_key ] );
                     process_validator( validator );
                 }

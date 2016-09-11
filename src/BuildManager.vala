@@ -8,6 +8,7 @@ public class BuildManager
     public static const string MODE_QUICK = "quick";
 
     public static const string VAR_INPUT      = "INPUT";        ///< e.g. `/path/file.tex`
+    public static const string VAR_INPUT_DIR  = "INPUT_DIR";    ///< e.g. `/path`
     public static const string VAR_INPUT_NAME = "INPUT_NAME";   ///< e.g. `file`
     public static const string VAR_OUTPUT     = "OUTPUT";       ///< e.g. `/path/.build/file
     public static const string VAR_BUILD_DIR  = "BUILD_DIR";    ///< e.g. `/path/.build`
@@ -60,7 +61,7 @@ public class BuildManager
                 """
                 %s: %s --output-directory "$BUILD_DIR" --interaction=batchmode --synctex=1 "$INPUT"
                 %s
-                ln --force "$OUTPUT.pdf" "../$INPUT_NAME.pdf"
+                ln --force "$OUTPUT.pdf" "$INPUT_DIR/$INPUT_NAME.pdf"
                 """
                 .printf( MODE_FULL, latex_cmd, COMMAND_PREVIEW ) );
         }
@@ -100,13 +101,14 @@ public class BuildManager
     public CommandContext create_build_context( SourceFileManager.SourceFile input )
         requires( !Path.get_basename( input.path ).has_prefix( "." ) ) // TODO: warn user that files starting with "." cannot be built
     {
-        var   base_dir = Path.get_dirname( input.path );
-        var  build_dir = Path.build_path( Path.DIR_SEPARATOR_S, base_dir, ".build" + Path.DIR_SEPARATOR_S );
+        var  input_dir = Path.get_dirname( input.path );
+        var  build_dir = Path.build_path( Path.DIR_SEPARATOR_S, input_dir, ".build" + Path.DIR_SEPARATOR_S );
         var input_name = get_input_name( input.path );
         var     output = get_output( input_name, build_dir );
-        var    context = new CommandContext( build_dir );
+        var    context = new CommandContext( input_dir );
 
         context.variables[      VAR_INPUT ] = input.path;
+        context.variables[  VAR_INPUT_DIR ] = input_dir;
         context.variables[ VAR_INPUT_NAME ] = input_name;
         context.variables[  VAR_BUILD_DIR ] = build_dir;
         context.variables[     VAR_OUTPUT ] = output;
