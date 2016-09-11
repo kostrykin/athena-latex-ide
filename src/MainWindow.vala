@@ -675,7 +675,7 @@ public class MainWindow : Gtk.ApplicationWindow
 
     private void init_build( CommandSequence.Run build, CommandContext context )
     {
-        DirUtils.create_with_parents( build.dir, 493 ); // 493 is 755 in octal
+        DirUtils.create_with_parents( context.variables[ BuildManager.VAR_BUILD_DIR ], 493 ); // 493 is 755 in octal
         int longest_key = 0;
         foreach( var key in context.variables.keys ) longest_key = Utils.max( longest_key, key.length );
         var format = "%" + longest_key.to_string() + "s = %s\n";
@@ -687,8 +687,8 @@ public class MainWindow : Gtk.ApplicationWindow
     {
         /* The `pdf_path` update reloads the preview and re-initializes synctex implicitly.
          */
-        preview.pdf_path = editor.session.output_path;
-        side_stack.set_visible_child_name( editor.session.output_path == null ? SIDE_STACK_HELP : SIDE_STACK_PREVIEW );
+        preview.pdf_path = FileUtils.test( editor.session.output_path, FileTest.IS_REGULAR | FileTest.EXISTS ) ? editor.session.output_path : null;
+        side_stack.set_visible_child_name( preview.pdf_path == null ? SIDE_STACK_HELP : SIDE_STACK_PREVIEW );
 
         if( current_build != null )
         {

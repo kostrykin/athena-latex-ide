@@ -26,7 +26,6 @@ namespace Assistant
         {
             Object( orientation: Gtk.Orientation.VERTICAL, spacing: 10 );
             contents_window.add( contents );
-            contents_window.get_vadjustment().changed.connect( scroll_to_bottom );
             contents.column_spacing = 10;
             contents.   row_spacing =  0;
 
@@ -47,10 +46,14 @@ namespace Assistant
             hexpand  = true;
         }
 
-        private void scroll_to_bottom( Gtk.Adjustment vadj )
+        private void scroll_to( Gtk.Widget widget )
         {
-            vadj.set_value( vadj.upper - vadj.page_size );
-            vadj.value_changed();
+            int widget_position;
+            widget.translate_coordinates( contents, 0, 0, null, out widget_position );
+            var vadj = contents_window.get_vadjustment();
+            stdout.printf( "*** 1) %d\n", widget_position );
+            stdout.printf( "*** 2) %g\n", vadj.upper );
+            vadj.value = widget_position;
         }
 
         public string get_name()
@@ -241,6 +244,7 @@ namespace Assistant
             var prerequisite = prerequisites[ current_prerequisite_pos ];
             var info = prerequisite_infos[ prerequisite ];
             info.increment_jobs( this );
+            scroll_to( info.name_view );
             prerequisite.fix.begin( ( obj, res ) =>
                 {
                     info.decrement_jobs( this );
