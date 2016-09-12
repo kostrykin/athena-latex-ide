@@ -9,8 +9,9 @@ if(CMAKE_INSTALL_PREFIX STREQUAL "/usr")
     install(CODE "execute_process(COMMAND gtk-update-icon-cache -q /usr/share/icons/hicolor)")
 endif()
 
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/athena-128.png DESTINATION share/athena-latex-ide RENAME logo.png)
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/athena.css     DESTINATION share/athena-latex-ide                )
+install(FILES     ${CMAKE_CURRENT_SOURCE_DIR}/athena-128.png DESTINATION share/athena-latex-ide RENAME logo.png)
+install(FILES     ${CMAKE_CURRENT_SOURCE_DIR}/athena.css     DESTINATION share/athena-latex-ide                )
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/assistant      DESTINATION share/athena-latex-ide                )
 
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/athena-latex-ide.desktop DESTINATION share/applications)
 
