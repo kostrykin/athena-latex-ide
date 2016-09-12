@@ -50,7 +50,7 @@ public class BuildManager
                 + ( bibtex_on[ idx ]
                 ?
                     """
-                    %s: bibtex -terse "$INPUT_NAME.aux"
+                    %s: bibtex -terse "$OUTPUT.aux"
                     %s: %s --output-directory "$BUILD_DIR" --interaction=batchmode "$INPUT"
                     """
                     .printf( MODE_FULL, MODE_FULL, latex_cmd )
