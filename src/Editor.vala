@@ -46,7 +46,9 @@ public class Editor : Gtk.Box
     private bool handle_files_view_changes = true;
 
     public FeatureCompletionProvider reference_completion_provider { public get; private set; }
-    public FeatureCompletionProvider bib_entry_completion_provider { public get; private set; }
+    public FeatureCompletionProvider      cite_completion_provider { public get; private set; }
+    public FeatureCompletionProvider     citep_completion_provider { public get; private set; }
+    public FeatureCompletionProvider     citet_completion_provider { public get; private set; }
     public CommandCompletionProvider   command_completion_provider { public get; private set; }
 
     #if DEBUG
@@ -71,8 +73,10 @@ public class Editor : Gtk.Box
 
         this.session.files.invalidated.connect( update_files_model );
 
-        this.reference_completion_provider = new FeatureCompletionProvider( this, SourceStructure.Feature.LABEL    , "ref" , "Labels"     );
-        this.bib_entry_completion_provider = new FeatureCompletionProvider( this, SourceStructure.Feature.BIB_ENTRY, "cite", "References" );
+        this.reference_completion_provider = new FeatureCompletionProvider( this, SourceStructure.Feature.LABEL    , "ref"  , "Labels"     );
+        this.     cite_completion_provider = new FeatureCompletionProvider( this, SourceStructure.Feature.BIB_ENTRY, "cite" , "References" );
+        this.    citep_completion_provider = new FeatureCompletionProvider( this, SourceStructure.Feature.BIB_ENTRY, "citep", "References" );
+        this.    citet_completion_provider = new FeatureCompletionProvider( this, SourceStructure.Feature.BIB_ENTRY, "citet", "References" );
         this.  command_completion_provider = new CommandCompletionProvider( this );
     }
 

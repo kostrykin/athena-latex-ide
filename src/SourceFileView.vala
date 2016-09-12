@@ -179,7 +179,9 @@ public class SourceFileView : Gtk.ScrolledWindow
 
         partitioning = new SourcePartitioning( buffer, () => { return new Partition( this ); } );
         text_view.get_completion().add_provider( editor.reference_completion_provider );
-        text_view.get_completion().add_provider( editor.bib_entry_completion_provider );
+        text_view.get_completion().add_provider( editor.     cite_completion_provider );
+        text_view.get_completion().add_provider( editor.    citep_completion_provider );
+        text_view.get_completion().add_provider( editor.    citet_completion_provider );
         text_view.get_completion().add_provider( editor.  command_completion_provider );
 
         this.add( text_view );

@@ -6,7 +6,7 @@ public class FeatureCompletionProvider: Object, Gtk.SourceCompletionProvider
     {
         try
         {
-            acceptance_pattern = new Regex( "[A-Za-z0-9_:]*$", RegexCompileFlags.ANCHORED | RegexCompileFlags.DOLLAR_ENDONLY );
+            acceptance_pattern = new Regex( """((?:\[[^\]]*\])?){[A-Za-z0-9_:]*$""", RegexCompileFlags.ANCHORED | RegexCompileFlags.DOLLAR_ENDONLY );
         }
         catch( RegexError err )
         {
@@ -41,12 +41,14 @@ public class FeatureCompletionProvider: Object, Gtk.SourceCompletionProvider
         line_start.set_line_offset( 0 );
 
         Gtk.TextIter c0, c1;
-        if( context.iter.backward_search( "\\%s{".printf( match_command ), 0, out c0, out c1, line_start ) )
+        if( context.iter.backward_search( "\\%s".printf( match_command ), 0, out c0, out c1, line_start ) )
         {
             var text = c1.get_text( context.iter );
-            if( acceptance_pattern.match_all( text ) )
+            MatchInfo match_info;
+            if( acceptance_pattern.match( text, 0, out match_info ) )
             {
                 label_input_start = c1;
+                label_input_start.forward_chars( 1 + match_info.fetch( 1 ).length );
                 return true;
             }
         }
