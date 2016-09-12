@@ -6,6 +6,7 @@ public class SourceAnalyzer : Object
 
     private Regex       include_pattern;
     private Regex         input_pattern;
+    private Regex  bibliography_pattern;
     private Regex         label_pattern;
     private Regex    usepackage_pattern;
     private Regex documentclass_pattern;
@@ -27,6 +28,7 @@ public class SourceAnalyzer : Object
         {
                   include_pattern = create_simple_command_pattern(       "include" );
                     input_pattern = create_simple_command_pattern(         "input" );
+             bibliography_pattern = create_simple_command_pattern(  "bibliography" );
                     label_pattern = create_simple_command_pattern(         "label" );
             documentclass_pattern = create_simple_command_pattern( "documentclass" );
                usepackage_pattern = create_simple_command_pattern(    "usepackage" );
@@ -89,11 +91,13 @@ public class SourceAnalyzer : Object
     }
 
     private static const string TEX_SUFFIX = ".tex";
+    private static const string BIB_SUFFIX = ".bib";
 
     public void find_file_references( string source, FileReferenceHandler handle )
     {
-        find_single_line_pattern( source, ( value ) => { handle( value + TEX_SUFFIX, FileReferenceType.UNKNOWN ); },   input_pattern );
-        find_single_line_pattern( source, ( value ) => { handle( value + TEX_SUFFIX, FileReferenceType.UNKNOWN ); }, include_pattern );
+        find_single_line_pattern( source, ( value ) => { handle( value + TEX_SUFFIX, FileReferenceType.UNKNOWN ); },        input_pattern );
+        find_single_line_pattern( source, ( value ) => { handle( value + TEX_SUFFIX, FileReferenceType.UNKNOWN ); },      include_pattern );
+        find_single_line_pattern( source, ( value ) => { handle( value + BIB_SUFFIX, FileReferenceType.UNKNOWN ); }, bibliography_pattern );
     }
 
 }
