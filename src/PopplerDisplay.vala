@@ -11,7 +11,7 @@ public class PopplerDisplay : Gtk.DrawingArea
     private double mid_page_width;
     private double mid_page_height;
 
-    private double _spacing = 0;
+    private double _spacing = 15;
     public  double  spacing
     {
         set
@@ -284,7 +284,7 @@ public class PopplerDisplay : Gtk.DrawingArea
     private void update_adjustments()
     {
         v_adjustment.page_size = mid_page_height / zoom;
-        v_adjustment.upper = y_lookup[ y_lookup.size - 1 ] + spacing + pages[ pages.length - 1 ].height;
+        v_adjustment.upper = y_lookup[ y_lookup.size - 1 ] + pages[ pages.length - 1 ].height;
         v_adjustment.page_increment = 1;
         v_adjustment.step_increment = 1;
 
@@ -445,7 +445,6 @@ public class PopplerDisplay : Gtk.DrawingArea
         {
             /* Draw pages [first...last] at `y_lookup` locations.
              */
-            context.set_source_rgba( 1, 1, 1, 1 );
             var scale = renderer.scale;
             PopplerRenderer.Result result = PopplerRenderer.Result();
             for( int page_idx = renderer.first_page; page_idx <= renderer.last_page; ++page_idx )
@@ -455,6 +454,7 @@ public class PopplerDisplay : Gtk.DrawingArea
                 double h = (int)( scale * pages[ page_idx ].height + 0.5 );
                 double x = (int)( ( get_allocated_width() - w ) / 2 - scale * h_adjustment.value );
 
+                context.set_source_rgba( 1, 1, 1, 1 );
 	        context.rectangle( x, y, w, h );
 	        context.fill();
 
