@@ -43,9 +43,10 @@ public class BuildManager
                 """
                 %s
                 %s: %s --output-directory "$BUILD_DIR" --interaction=batchmode --synctex=1 "$INPUT"
+                %s: rm --force "$OUTPUT.bbl"
                 %s: %s --output-directory "$BUILD_DIR" --interaction=batchmode "$INPUT"
                 """
-                .printf( COMMAND_INIT, MODE_QUICK, latex_cmd, MODE_FULL, latex_cmd )
+                .printf( COMMAND_INIT, MODE_QUICK, latex_cmd, MODE_FULL, MODE_FULL, latex_cmd )
 
                 + ( bibtex_on[ idx ]
                 ?
