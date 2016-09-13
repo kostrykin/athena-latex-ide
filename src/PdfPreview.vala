@@ -94,6 +94,7 @@ public abstract class PdfPreview : Gtk.Box
                 else
                 if( page > -1 && page != node.page )
                 {
+                    node = scanner.next_result();
                     continue;
                 }
 
