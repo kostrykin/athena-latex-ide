@@ -57,6 +57,7 @@ namespace SourceStructure
         }
 
         protected void add_parent( InnerNode parent )
+            ensures( (bool)( parent in parents ) )
         {
             parents.add( parent );
             parent.weak_ref( drop_parent );
@@ -188,6 +189,11 @@ namespace SourceStructure
             editor.file_opened.connect( weak_this.handle_file_opened );
         }
 
+        ~FileReferenceNode()
+        {
+            if( is_resolved ) resolution.node.weak_unref( reset );
+        }
+
         /**
          * When another file is saved, then it's path migh have changed,
          * so try to use it's path to resolve this reference,
@@ -225,6 +231,7 @@ namespace SourceStructure
             if( is_resolved )
             {
                 resolution.node.remove_from_parent( this );
+                resolution = null;
             }
         }
 

@@ -346,6 +346,7 @@ public class MainWindow : Gtk.ApplicationWindow
         main_stack.set_visible_child_name( MAIN_STACK_WELCOME );
         build_log.clear();
         editor.session.output_path = null;
+        editor.session.master = null;
         update_preview();
 
         foreach( var w in editor_dependent_widgets ) w.sensitive = false;

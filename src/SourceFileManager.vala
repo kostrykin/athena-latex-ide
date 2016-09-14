@@ -7,7 +7,7 @@ public class SourceFileManager
 
     private static uint BYTE_CODE_LF = 0x0A;
 
-    public class SourceFile
+    public class SourceFile : Object
     {
         private string? _path;
         private string? _contents;
@@ -115,6 +115,8 @@ public class SourceFileManager
 
         internal SourceFile( string? path, int position, uint flags )
         {
+            Object();
+
             #if DEBUG
             ++_debug_instance_counter;
             #endif

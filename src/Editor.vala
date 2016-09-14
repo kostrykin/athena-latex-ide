@@ -591,43 +591,46 @@ public class Editor : Gtk.Box
 
     private void update_files_model( int first, int count )
     {
-        /* Walk the iterator up to the first invalidated element.
-         */
         Gtk.TreeIter itr;
-        files.get_iter_from_string( out itr, "%u".printf( first ) );
-
-        for( int position = first; position < Utils.min( first + count, session.files.count ); ++position )
+        if( first >= 0 )
         {
-            /* Append a row, if the iterator has moved beyond the scope of the model.
+            /* Walk the iterator up to the first invalidated element.
              */
-            if( !files.iter_is_valid( itr ) )
-            {
-                files.insert( out itr, position );
-            }
+            files.get_iter_from_string( out itr, "%u".printf( first ) );
 
-            /* Decide, which icon is to use.
-             */
-            var file = session.files[ position ];
-            var icon_name = "";
-            if( file.has_flags( Session.FLAGS_CONFLICT ) )
+            for( int position = first; position < Utils.min( first + count, session.files.count ); ++position )
             {
-                icon_name = "process-error-symbolic";
-            }
-            else
-            if( file.has_flags( Session.FLAGS_MODIFIED ) )
-            {
-                icon_name = "media-floppy-symbolic";
-            }
+                /* Append a row, if the iterator has moved beyond the scope of the model.
+                 */
+                if( !files.iter_is_valid( itr ) )
+                {
+                    files.insert( out itr, position );
+                }
 
-            /* Update the current row's data.
-             */
-            files.set( itr, 0, icon_name  );
-            files.set( itr, 1, file.label );
-            files.set( itr, 2, session.master == file ? "master" : "" );
+                /* Decide, which icon is to use.
+                 */
+                var file = session.files[ position ];
+                var icon_name = "";
+                if( file.has_flags( Session.FLAGS_CONFLICT ) )
+                {
+                    icon_name = "process-error-symbolic";
+                }
+                else
+                if( file.has_flags( Session.FLAGS_MODIFIED ) )
+                {
+                    icon_name = "media-floppy-symbolic";
+                }
 
-            /* Make the iterator step forward.
-             */
-            files.iter_next( ref itr );
+                /* Update the current row's data.
+                 */
+                files.set( itr, 0, icon_name  );
+                files.set( itr, 1, file.label );
+                files.set( itr, 2, session.master == file ? "master" : "" );
+
+                /* Make the iterator step forward.
+                 */
+                files.iter_next( ref itr );
+            }
         }
 
         /* Now cut-off those rows, which aren't present anymore.
