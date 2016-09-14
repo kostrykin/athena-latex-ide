@@ -178,11 +178,12 @@ public class SourceFileView : Gtk.ScrolledWindow
         Athena.instance.settings.changed.connect( weak_this.apply_settings );
 
         partitioning = new SourcePartitioning( buffer, () => { return new Partition( this ); } );
-        text_view.get_completion().add_provider( editor.reference_completion_provider );
-        text_view.get_completion().add_provider( editor.     cite_completion_provider );
-        text_view.get_completion().add_provider( editor.    citep_completion_provider );
-        text_view.get_completion().add_provider( editor.    citet_completion_provider );
-        text_view.get_completion().add_provider( editor.  command_completion_provider );
+        text_view.get_completion().add_provider( editor.    ref_completion_provider );
+        text_view.get_completion().add_provider( editor.  eqref_completion_provider );
+        text_view.get_completion().add_provider( editor.   cite_completion_provider );
+        text_view.get_completion().add_provider( editor.  citep_completion_provider );
+        text_view.get_completion().add_provider( editor.  citet_completion_provider );
+        text_view.get_completion().add_provider( editor.command_completion_provider );
 
         this.add( text_view );
         this.grab_focus.connect_after( () => { text_view.grab_focus(); } );

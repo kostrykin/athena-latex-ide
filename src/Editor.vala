@@ -45,11 +45,12 @@ public class Editor : Gtk.Box
 
     private bool handle_files_view_changes = true;
 
-    public FeatureCompletionProvider reference_completion_provider { public get; private set; }
-    public FeatureCompletionProvider      cite_completion_provider { public get; private set; }
-    public FeatureCompletionProvider     citep_completion_provider { public get; private set; }
-    public FeatureCompletionProvider     citet_completion_provider { public get; private set; }
-    public CommandCompletionProvider   command_completion_provider { public get; private set; }
+    public FeatureCompletionProvider     ref_completion_provider { public get; private set; }
+    public FeatureCompletionProvider   eqref_completion_provider { public get; private set; }
+    public FeatureCompletionProvider    cite_completion_provider { public get; private set; }
+    public FeatureCompletionProvider   citep_completion_provider { public get; private set; }
+    public FeatureCompletionProvider   citet_completion_provider { public get; private set; }
+    public CommandCompletionProvider command_completion_provider { public get; private set; }
 
     #if DEBUG
     public static uint _debug_instance_counter = 0;
@@ -73,11 +74,12 @@ public class Editor : Gtk.Box
 
         this.session.files.invalidated.connect( update_files_model );
 
-        this.reference_completion_provider = new FeatureCompletionProvider( this, SourceStructure.Feature.LABEL    , "ref"  , "Labels"     );
-        this.     cite_completion_provider = new FeatureCompletionProvider( this, SourceStructure.Feature.BIB_ENTRY, "cite" , "References" );
-        this.    citep_completion_provider = new FeatureCompletionProvider( this, SourceStructure.Feature.BIB_ENTRY, "citep", "References" );
-        this.    citet_completion_provider = new FeatureCompletionProvider( this, SourceStructure.Feature.BIB_ENTRY, "citet", "References" );
-        this.  command_completion_provider = new CommandCompletionProvider( this );
+        this.    ref_completion_provider = new FeatureCompletionProvider( this, SourceStructure.Feature.LABEL    , "ref"  , "Labels"     );
+        this.  eqref_completion_provider = new FeatureCompletionProvider( this, SourceStructure.Feature.LABEL    , "eqref", "Labels"     );
+        this.   cite_completion_provider = new FeatureCompletionProvider( this, SourceStructure.Feature.BIB_ENTRY, "cite" , "References" );
+        this.  citep_completion_provider = new FeatureCompletionProvider( this, SourceStructure.Feature.BIB_ENTRY, "citep", "References" );
+        this.  citet_completion_provider = new FeatureCompletionProvider( this, SourceStructure.Feature.BIB_ENTRY, "citet", "References" );
+        this.command_completion_provider = new CommandCompletionProvider( this );
     }
 
     ~Editor()
