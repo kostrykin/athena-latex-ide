@@ -12,7 +12,6 @@ public class SourceAnalyzer : Object
     private Regex documentclass_pattern;
     private Regex     bib_entry_pattern;
     private Regex    newcommand_pattern;
-    private Regex           def_pattern;
 
     /**
      * Creates a new pattern, which matches single-parameter commands, that are written on a single line.
@@ -24,6 +23,7 @@ public class SourceAnalyzer : Object
 
     private SourceAnalyzer()
     {
+        string newcommand_instructions[] = { "newcommand", "renewcommand", "DeclareMathOperator", "def" };
         try
         {
                   include_pattern = create_simple_command_pattern(       "include" );
@@ -32,9 +32,9 @@ public class SourceAnalyzer : Object
                     label_pattern = create_simple_command_pattern(         "label" );
             documentclass_pattern = create_simple_command_pattern( "documentclass" );
                usepackage_pattern = create_simple_command_pattern(    "usepackage" );
-             bib_entry_pattern = new Regex( """[^\\/]*@[a-z]{3,}{ *([A-Za-z0-9_:]+)"""        , RegexCompileFlags.ANCHORED );
-            newcommand_pattern = new Regex( """[^%]*\\(?:re)?newcommand{\\([A-Za-z0-9_:]+)}""", RegexCompileFlags.ANCHORED );
-                   def_pattern = new Regex( """[^%]*\\def\\([A-Za-z0-9_:]+)"""                , RegexCompileFlags.ANCHORED );
+             bib_entry_pattern = new Regex( """[^\\/]*@[a-z]{3,}{ *([A-Za-z0-9_:]+)""", RegexCompileFlags.ANCHORED );
+            newcommand_pattern = new Regex( """[^%]*\\(?:%s){?\\([A-Za-z0-9_:]+)[}{\[]""".
+                                            printf( string.joinv( "|", newcommand_instructions ) ), RegexCompileFlags.ANCHORED );
         }
         catch( RegexError err )
         {
@@ -81,7 +81,6 @@ public class SourceAnalyzer : Object
     public void find_commands( string source, StringHandler handle )
     {
         find_single_line_pattern( source, handle, newcommand_pattern );
-        find_single_line_pattern( source, handle,        def_pattern );
     }
 
     public void find_package_references( string source, StringHandler handle )
