@@ -51,8 +51,6 @@ namespace Assistant
             int widget_position;
             widget.translate_coordinates( contents, 0, 0, null, out widget_position );
             var vadj = contents_window.get_vadjustment();
-            stdout.printf( "*** 1) %d\n", widget_position );
-            stdout.printf( "*** 2) %g\n", vadj.upper );
             vadj.value = widget_position;
         }
 

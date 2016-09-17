@@ -8,7 +8,7 @@ namespace Assistant
         {
             var requisite = new DownloadablePrerequisite
                     ( context
-                    , filename
+                    , @"$filename.ttf"
                     , @"https://github.com/mozilla/Fira/blob/master/ttf/$filename.ttf?raw=true"
                     , "~/.fonts/Fira/" );
 
@@ -59,12 +59,12 @@ namespace Assistant
             prerequisites.add_prerequisite( new ProgramPrerequisite( context, "xelatex", XELATEX_INSTALL_INSTRUCTIONS ) );
             prerequisites.add_prerequisite( new PackagePrerequisite( context, "eu2enc" , XELATEX_INSTALL_INSTRUCTIONS ) );
 
-            prerequisites.add_prerequisite( create_fira_font_requisite( context, "Fira Typeface Mono"             , "FiraMono-Regular" ) );
-            prerequisites.add_prerequisite( create_fira_font_requisite( context, "Fira Typeface Mono-Bold"        , "FiraMono-Bold"    ) );
-            prerequisites.add_prerequisite( create_fira_font_requisite( context, "Fira Typeface Sans"             , "FiraSans-Regular" ) );
-            prerequisites.add_prerequisite( create_fira_font_requisite( context, "Fira Typeface Sans-Light"       , "FiraSans-Light" ) );
+            prerequisites.add_prerequisite( create_fira_font_requisite( context, "Fira Typeface Mono"             , "FiraMono-Regular"     ) );
+            prerequisites.add_prerequisite( create_fira_font_requisite( context, "Fira Typeface Mono-Bold"        , "FiraMono-Bold"        ) );
+            prerequisites.add_prerequisite( create_fira_font_requisite( context, "Fira Typeface Sans"             , "FiraSans-Regular"     ) );
+            prerequisites.add_prerequisite( create_fira_font_requisite( context, "Fira Typeface Sans-Light"       , "FiraSans-Light"       ) );
             prerequisites.add_prerequisite( create_fira_font_requisite( context, "Fira Typeface Sans-Light-Italic", "FiraSans-LightItalic" ) );
-            prerequisites.add_prerequisite( create_fira_font_requisite( context, "Fira Typeface Sans-Italic"      , "FiraSans-Italic" ) );
+            prerequisites.add_prerequisite( create_fira_font_requisite( context, "Fira Typeface Sans-Italic"      , "FiraSans-Italic"      ) );
 
             prerequisites.add_prerequisite( create_sty_requisite( context, "beamercolorthememetropolis.sty", "https://dl.dropboxusercontent.com/u/8265828/metropolis/beamercolorthememetropolis.sty" ) );
             prerequisites.add_prerequisite( create_sty_requisite( context, "beamerfontthememetropolis.sty" , "https://dl.dropboxusercontent.com/u/8265828/metropolis/beamerfontthememetropolis.sty"  ) );
