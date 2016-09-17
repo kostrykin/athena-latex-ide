@@ -474,6 +474,7 @@ public class Editor : Gtk.Box
                     session.files.set_path( current_file.position, path );
                     files_view.set_active ( current_file.position );
                     result = save_current_file();
+                    buildable_invalidated();
                 }
                 else
                 {

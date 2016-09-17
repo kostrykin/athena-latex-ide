@@ -1,2 +1,4 @@
 - the build log should (also?) show the `.log` file when build fails (maybe just append it to the regular output)
+- fix crash which occurs only in non-debug build when the metropolis assistant is started
+- check why e.g. `\Leftrightarrow` doesn't appear in auto-completition
 
