@@ -129,7 +129,7 @@ public class PopplerRenderer
     {
         lock( mutex )
         {
-            for( int page_idx = 0; page_idx <= finished_pages.length; ++page_idx )
+            for( int page_idx = 0; page_idx < finished_pages.length; ++page_idx )
             {
                 finished_pages[ page_idx ] = false;
             }
