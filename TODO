@@ -1,6 +1,5 @@
 - the build log should (also?) show the `.log` file when build fails (maybe just append it to the regular output)
 - fix crash which occurs only in non-debug build when the metropolis assistant is started
-- check why e.g. `\Leftrightarrow` doesn't appear in auto-completition
 - fix "Next" button becoming sensitive after fixing font issues when all `sty` files are already present
 - PDF preview's zoom/viewport get messed up when a new project is started (probably its the viewport which needs to be reset)
 
