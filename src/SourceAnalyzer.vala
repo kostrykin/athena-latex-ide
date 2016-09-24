@@ -4,14 +4,15 @@ public class SourceAnalyzer : Object
     private static Once< SourceAnalyzer > _instance;
     public  static SourceAnalyzer instance { get { return _instance.once( () => { return new SourceAnalyzer(); } ); } }
 
-    private Regex       include_pattern;
-    private Regex         input_pattern;
-    private Regex  bibliography_pattern;
-    private Regex         label_pattern;
-    private Regex    usepackage_pattern;
-    private Regex documentclass_pattern;
-    private Regex     bib_entry_pattern;
-    private Regex    newcommand_pattern;
+    private Regex        include_pattern;
+    private Regex          input_pattern;
+    private Regex   bibliography_pattern;
+    private Regex          label_pattern;
+    private Regex     usepackage_pattern;
+    private Regex requirepackage_pattern;
+    private Regex  documentclass_pattern;
+    private Regex      bib_entry_pattern;
+    private Regex     newcommand_pattern;
 
     /**
      * Creates a new pattern, which matches single-parameter commands, that are written on a single line.
@@ -23,15 +24,16 @@ public class SourceAnalyzer : Object
 
     private SourceAnalyzer()
     {
-        string newcommand_instructions[] = { "newcommand", "renewcommand", "DeclareMathOperator", "def" };
+        string newcommand_instructions[] = { "newcommand", "renewcommand", "DeclareMathOperator", "DeclareMathSymbol", "def", "let" };
         try
         {
-                  include_pattern = create_simple_command_pattern(       "include" );
-                    input_pattern = create_simple_command_pattern(         "input" );
-             bibliography_pattern = create_simple_command_pattern(  "bibliography" );
-                    label_pattern = create_simple_command_pattern(         "label" );
-            documentclass_pattern = create_simple_command_pattern( "documentclass" );
-               usepackage_pattern = create_simple_command_pattern(    "usepackage" );
+                   include_pattern = create_simple_command_pattern(        "include" );
+                     input_pattern = create_simple_command_pattern(          "input" );
+              bibliography_pattern = create_simple_command_pattern(   "bibliography" );
+                     label_pattern = create_simple_command_pattern(          "label" );
+             documentclass_pattern = create_simple_command_pattern(  "documentclass" );
+                usepackage_pattern = create_simple_command_pattern(     "usepackage" );
+            requirepackage_pattern = create_simple_command_pattern( "RequirePackage" );
              bib_entry_pattern = new Regex( """[^\\/]*@[a-z]{3,}{ *([A-Za-z0-9_:]+)""", RegexCompileFlags.ANCHORED );
             newcommand_pattern = new Regex( """[^%]*\\(?:%s){?\\([A-Za-z0-9_:]+)[}{\[]""".
                                             printf( string.joinv( "|", newcommand_instructions ) ), RegexCompileFlags.ANCHORED );
@@ -85,8 +87,9 @@ public class SourceAnalyzer : Object
 
     public void find_package_references( string source, StringHandler handle )
     {
-        find_single_line_pattern( source, handle,    usepackage_pattern );
-        find_single_line_pattern( source, handle, documentclass_pattern );
+        find_single_line_pattern( source, handle,     usepackage_pattern );
+        find_single_line_pattern( source, handle,  documentclass_pattern );
+        find_single_line_pattern( source, handle, requirepackage_pattern );
     }
 
     private static const string TEX_SUFFIX = ".tex";

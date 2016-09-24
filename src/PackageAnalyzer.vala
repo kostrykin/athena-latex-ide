@@ -138,14 +138,30 @@ public class PackageAnalyzer : Object
 
     private static void dispose_request( Result package_info, string? path )
     {
-        string? file_path = find_package( package_info.name, path );
-        if( file_path == null ) warning( "Failed to find package \"%s\"", package_info.name );
-        else
+        var enqueued_package_names = new Gee.HashSet   < string >();
+        var pending_package_names  = new Gee.ArrayQueue< string >();
+
+        enqueued_package_names.add  ( package_info.name );
+        pending_package_names .offer( package_info.name );
+
+        package_info.commands = new Gee.HashSet< string >();
+        while( !pending_package_names.is_empty )
         {
-            var file = File.new_for_path( file_path );
-            var contents = Utils.read_text_file( file );
-            package_info.commands = new Gee.HashSet< string >();
-            SourceAnalyzer.instance.find_commands( contents, ( cmd ) => { package_info.commands.add( cmd ); } );
+            var package_name = pending_package_names.poll();
+            string? file_path = find_package( package_name, path );
+            if( file_path == null ) warning( "Failed to find package \"%s\"", package_info.name );
+            else
+            {
+                var file = File.new_for_path( file_path );
+                var contents = Utils.read_text_file( file );
+                SourceAnalyzer.instance.find_commands( contents, ( cmd ) => { package_info.commands.add( cmd ); } );
+                SourceAnalyzer.instance.find_package_references( contents, ( used_package_name ) =>
+                    {
+                        if( used_package_name in enqueued_package_names ) return;
+                        else pending_package_names.offer( used_package_name );
+                    }
+                );
+            }
         }
     }
 
