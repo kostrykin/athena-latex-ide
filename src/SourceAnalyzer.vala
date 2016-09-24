@@ -25,15 +25,15 @@ public class SourceAnalyzer : Object
     private SourceAnalyzer()
     {
         string newcommand_instructions[] =
-            {
-                "newcommand",
-                "renewcommand",
-                "DeclareMathOperator",
-                "DeclareMathSymbol",
-                "DeclareRobustCommand",
-                "def",
-                "let"
-            };
+        {
+            "newcommand",
+            "renewcommand",
+            "DeclareMathOperator",
+            "DeclareMathSymbol",
+            "DeclareRobustCommand",
+            "def",
+            "let"
+        };
         try
         {
                    include_pattern = create_simple_command_pattern(        "include" );
