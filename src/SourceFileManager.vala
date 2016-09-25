@@ -204,8 +204,9 @@ public class SourceFileManager
         }
         else
         {
-            var position = get_insert_position_for_named( path, 0, named_files );
-            return position < files.size && files[ position ].path == path ? position : -1;
+            var canonical_path = File.new_for_path( path ).get_path();            
+            var position = get_insert_position_for_named( canonical_path, 0, named_files );
+            return position < files.size && files[ position ].path == canonical_path ? position : -1;
         }
     }
 
