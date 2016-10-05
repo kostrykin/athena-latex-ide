@@ -244,16 +244,23 @@ public class Editor : Gtk.Box
         files_view_toolitem.set_expand( true );
         var  text_renderer = new Gtk.CellRendererText();
         var    pb_renderer = new Gtk.CellRendererPixbuf();
-        var badge_renderer = new Granite.Widgets.CellRendererBadge();
+        var badge_renderer = new Gtk.CellRendererText();
         files_view.pack_start(    pb_renderer, false );
         files_view.pack_start(  text_renderer, true  );
-        files_view.pack_start( badge_renderer, false );
+        files_view.pack_end  ( badge_renderer, false );
         files_view.add_attribute(    pb_renderer, "icon_name", 0 );
         files_view.add_attribute(  text_renderer,      "text", 1 );
         files_view.add_attribute( badge_renderer,      "text", 2 );
         pb_renderer.set_fixed_size( 20, 16 );
         badge_renderer.set_padding( 10,  0 );
         files_view.show_all();
+
+        //badge_renderer.visible = false;
+        //files_view.notify.connect( (prop) =>
+        //    {
+        //        if( prop.name == "popup-shown" ) badge_renderer.visible = files_view.popup_shown;
+        //    }
+        //);
 
         files_view.changed.connect( () =>
             {
