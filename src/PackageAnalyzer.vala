@@ -76,8 +76,10 @@ public class PackageAnalyzer : Object
         }
     }
 
+    private static int c = 0;
     private void* analyze()
     {
+        warning( "PackageAnalyzer.analyze: Started %d times", ++c );
         Request? request;
         var cache = new Gee.HashMap< PackageAnalyzer.Request, PackageAnalyzer.Result >( PackageAnalyzer.Request.hash, PackageAnalyzer.Request.equal );
         while( ( request = poll_next_request() ) != null )
@@ -98,6 +100,7 @@ public class PackageAnalyzer : Object
         {
             analyzer_thread = null;
         }
+        warning( "PackageAnalyzer.analyze: Finished (%d remaining)", --c );
         return null;
     }
 
