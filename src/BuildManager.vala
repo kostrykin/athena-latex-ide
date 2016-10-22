@@ -22,10 +22,10 @@ public class BuildManager
 
     public BuildManager()
     {
-        const string latex_cmds [] = { "pdflatex"     , "pdflatex"              , "lualatex"      , "lualatex"                     , "xelatex"      , "xelatex"                      };
-        const bool   bibtex_on  [] = {  false         ,  true                   ,  false          ,  true                          ,  false         ,  true                          };
-        const string build_names[] = { "Default LaTeX", "Default LaTeX + BibTeX", "LuaLaTeX"      , "LuaLaTeX + BibTeX"            , "XeLaTeX"      , "XeLaTeX + BibTeX"             };
-        const uint   flags      [] = {  0             ,  FLAGS_BIBTEX           ,  FLAGS_LUA_LATEX,  FLAGS_LUA_LATEX | FLAGS_BIBTEX,  FLAGS_XE_LATEX,  FLAGS_XE_LATEX | FLAGS_BIBTEX };
+        const string latex_cmds [] = { "pdflatex", "pdflatex"         , "lualatex"      , "lualatex"                     , "xelatex"      , "xelatex"                      };
+        const bool   bibtex_on  [] = {  false    ,  true              ,  false          ,  true                          ,  false         ,  true                          };
+        const string build_names[] = { "PdfLaTeX", "PdfLaTeX + BibTeX", "LuaLaTeX"      , "LuaLaTeX + BibTeX"            , "XeLaTeX"      , "XeLaTeX + BibTeX"             };
+        const uint   flags      [] = {  0        ,  FLAGS_BIBTEX      ,  FLAGS_LUA_LATEX,  FLAGS_LUA_LATEX | FLAGS_BIBTEX,  FLAGS_XE_LATEX,  FLAGS_XE_LATEX | FLAGS_BIBTEX };
         for( int idx = 0; idx < latex_cmds.length; ++idx )
         {
             var latex_cmd = latex_cmds[ idx ];
