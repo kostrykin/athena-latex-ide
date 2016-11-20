@@ -43,7 +43,7 @@ public class SourceAnalyzer : Object
              documentclass_pattern = create_simple_command_pattern(  "documentclass" );
                 usepackage_pattern = create_simple_command_pattern(     "usepackage" );
             requirepackage_pattern = create_simple_command_pattern( "RequirePackage" );
-             bib_entry_pattern = new Regex( """[^\\/]*@[a-z]{3,}{ *([A-Za-z0-9_:]+)""", RegexCompileFlags.ANCHORED );
+             bib_entry_pattern = new Regex( """[^\\/]*@[a-z]{3,}{ *([A-Za-z0-9_:\\-]+)""", RegexCompileFlags.ANCHORED );
             newcommand_pattern = new Regex( """[^%]*\\(?:%s){?\\([A-Za-z0-9_:]+)[}{\[]""".
                                             printf( string.joinv( "|", newcommand_instructions ) ), RegexCompileFlags.ANCHORED );
         }

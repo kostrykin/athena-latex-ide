@@ -6,7 +6,7 @@ public class FeatureCompletionProvider: Object, Gtk.SourceCompletionProvider
     {
         try
         {
-            acceptance_pattern = new Regex( """((?:\[[^\]]*\])?){[A-Za-z0-9_:]*$""", RegexCompileFlags.ANCHORED | RegexCompileFlags.DOLLAR_ENDONLY );
+            acceptance_pattern = new Regex( """((?:\[[^\]]*\])?){[A-Za-z0-9_:\\-]*$""", RegexCompileFlags.ANCHORED | RegexCompileFlags.DOLLAR_ENDONLY );
         }
         catch( RegexError err )
         {
