@@ -145,10 +145,8 @@ public class PopplerRenderer
         }
     }
 
-    private static int c = 0;
     private void* render_pages()
     {
-        warning( "PopplerPreview.render_pages: Started %d times", ++c );
         bool  done = false;
         int[] pending_page_indices;
         int   pending_pages_count;
@@ -214,7 +212,6 @@ public class PopplerRenderer
                 }
             }
         }
-        warning( "PopplerPreview.render_pages: Finished (%d remaining)", --c );
         return null;
     }
 
