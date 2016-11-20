@@ -76,35 +76,37 @@ public class PackageAnalyzer : Object
         }
     }
 
-    private static int c = 0;
+    private static int current_runs = 0;
+
     private void* analyze()
     {
-        warning( "PackageAnalyzer.analyze: Started %d times", ++c );
+        if( ++current_runs != 1 ) warning( "PackageAnalyzer.analyze started %d times", current_runs );
         Request? request;
         var cache = new Gee.HashMap< PackageAnalyzer.Request, PackageAnalyzer.Result >( PackageAnalyzer.Request.hash, PackageAnalyzer.Request.equal );
         while( ( request = poll_next_request() ) != null )
         {
+            message( "Processing package \"%s\"", request.package_name );
             Result? package_info = cache[ request ];
             bool cache_hit = package_info != null;
             if( !cache_hit )
             {
                 package_info = new Result();
                 package_info.name = request.package_name;
-                dispose_request( package_info, request.path );
+                dispatch_request( package_info, request.path );
                 cache[ request ] = package_info;
             }
-            dispose_package( package_info, request );
+            dispatch_package( package_info, request );
             if( !cache_hit ) Thread.usleep( (ulong) 1e5 );
         }
         lock( mutex )
         {
             analyzer_thread = null;
         }
-        warning( "PackageAnalyzer.analyze: Finished (%d remaining)", --c );
+        --current_runs;
         return null;
     }
 
-    private void dispose_package( Result package_info, Request request )
+    private void dispatch_package( Result package_info, Request request )
     {
         /* Schedule one-time call-back (return false).
          */
@@ -139,7 +141,7 @@ public class PackageAnalyzer : Object
         return file_path;
     }
 
-    private static void dispose_request( Result package_info, string? path )
+    private static void dispatch_request( Result package_info, string? path )
     {
         var enqueued_package_names = new Gee.HashSet   < string >();
         var pending_package_names  = new Gee.ArrayQueue< string >();
@@ -161,7 +163,11 @@ public class PackageAnalyzer : Object
                 SourceAnalyzer.instance.find_package_references( contents, ( used_package_name ) =>
                     {
                         if( used_package_name in enqueued_package_names ) return;
-                        else pending_package_names.offer( used_package_name );
+                        else
+                        {
+                            pending_package_names.offer( used_package_name );
+                            enqueued_package_names.add ( used_package_name );
+                        }
                     }
                 );
             }
