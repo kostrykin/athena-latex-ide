@@ -43,7 +43,7 @@ See the in-app "About"-screen for details.
 
 ### Installation
 
-- **Recommended:** Use the `.deb` Package. Download the [latest release](https://github.com/kostrykin/athena-latex-ide/releases) and double-click the file.
+- **Recommended:** Use the `.deb` Package. Download the [latest release](https://github.com/kostrykin/athena-latex-ide/releases/latest) and double-click the file.
 - **Alternative:** Build from source for a development environment.
 ```sh
 $ ./build.sh debug
