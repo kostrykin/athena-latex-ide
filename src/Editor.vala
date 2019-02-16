@@ -302,7 +302,8 @@ public class Editor : Gtk.Box
         menu.append( mnu_reload  );
         menu.show_all();
 
-        var btn_menu = new Granite.Widgets.ToolButtonWithMenu( ICON_DETAILS, "", menu );
+        var btn_menu = new Gtk.MenuToolButton ( ICON_DETAILS, "" );
+        btn_menu.set_menu ( menu );
         toolbar.add( new Gtk.SeparatorToolItem() );
         toolbar.add( btn_menu );
 
@@ -646,7 +647,7 @@ public class Editor : Gtk.Box
              * But it turns out, that `itr` is *always* invalid after it has
              * been passed to the `remove` method.
              */
-            files.remove( itr );
+            files.remove( ref itr );
         }
     }
 
